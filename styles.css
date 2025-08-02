@@ -1,4 +1,7 @@
 ul.Header {
-    display: inline;
     list-style-type: none;
+}
+
+li.Header-links {
+    display: inline;
 }
