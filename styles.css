@@ -28,22 +28,43 @@ a.Header-obj:hover {
 
 div.search-box {
     text-align: center;
+    align-items: center;
     margin: 0 auto;
     height: auto;
     width: 750px;
     margin-top: 2%;
-    outline: 2px solid rgb(155, 155, 155);
-    border-radius: 10px;
+    border: 0;
     padding: 10px;
+    display: flex;
+    justify-content: center;
 }
 
 input.search-input {
-    width: 500px;
-    height: 25px;
-    border-radius: 10px;
-    border-color: rgb(155, 155, 155);
+    background: transparent;
+    border: 0;
+    flex: 1;
+    outline: none;
+    padding: 24px 20px;
+    font-size: 18px;
 }
 
 button.search-button {
-    height: 25px;
+    padding: 3px;
+    font-size: 16px;
+    border-radius: 60px;
+    width: 75px;
+    background-color: rgb(60, 60, 60);
+    border-color: rgb(60, 60, 60);
+    color: rgb(245, 243, 243);
+    height: 30px;
+}
+
+form.search-bar {
+    width: 100%;
+    max-width: 700px;
+    background-color: rgb(245, 243, 243);
+    display: flex;
+    align-items: center;
+    border-radius: 60px;
+    padding: 10px 20px;
 }
