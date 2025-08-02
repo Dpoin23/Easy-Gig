@@ -57,6 +57,7 @@ button.search-button {
     border-color: rgb(60, 60, 60);
     color: rgb(245, 243, 243);
     height: 30px;
+    cursor: pointer;
 }
 
 form.search-bar {
@@ -67,4 +68,14 @@ form.search-bar {
     align-items: center;
     border-radius: 60px;
     padding: 10px 20px;
+}
+
+div.main-logo {
+    text-align: center;
+    display: flex;
+}
+
+ul.info {
+    list-style-type: none;
+    align-items: center;
 }
