@@ -1,7 +1,17 @@
 ul.Header {
     list-style-type: none;
+    text-align: center;
 }
 
 li.Header-links {
     display: inline;
+    margin: 5%;
+}
+
+a.Header-obj {
+    text-decoration: none;
+}
+
+a.Header-obj:hover {
+    text-decoration: underline;
 }
