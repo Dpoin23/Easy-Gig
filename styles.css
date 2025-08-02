@@ -15,3 +15,14 @@ a.Header-obj {
 a.Header-obj:hover {
     text-decoration: underline;
 }
+
+div.search-box {
+    text-align: center;
+    margin: 0 auto;
+    height: 500px;
+    width: 1250px;
+    margin-top: 2%;
+    outline: 2px solid rgb(155, 155, 155);
+    border-radius: 5px;
+    padding: 10px;
+}
