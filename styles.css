@@ -1,3 +1,12 @@
+*{
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    margin: 0px;
+    padding: 0px;
+}
+
 ul.Header {
     list-style-type: none;
     text-align: center;
@@ -6,6 +15,7 @@ ul.Header {
 li.Header-links {
     display: inline;
     margin: 5%;
+    font-size: 18px;
 }
 
 a.Header-obj {
@@ -19,10 +29,21 @@ a.Header-obj:hover {
 div.search-box {
     text-align: center;
     margin: 0 auto;
-    height: 500px;
-    width: 1250px;
+    height: auto;
+    width: 750px;
     margin-top: 2%;
     outline: 2px solid rgb(155, 155, 155);
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 10px;
+}
+
+input.search-input {
+    width: 500px;
+    height: 25px;
+    border-radius: 10px;
+    border-color: rgb(155, 155, 155);
+}
+
+button.search-button {
+    height: 25px;
 }
