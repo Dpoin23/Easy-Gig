@@ -7,14 +7,34 @@ body {
     padding: 0px;
 }
 
-ul.Header {
+div.main {
+    display: flex;
+    justify-content: center;
+    margin-top: 2%;
+}
+
+ul.main-ul {
     list-style-type: none;
+    padding: 0;
     text-align: center;
 }
 
+ul.Header {
+    list-style-type: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    margin: 0;
+}
+
+li.main-obj {
+    font-size: 16px;
+}
+
 li.Header-links {
-    display: inline;
-    margin: 5%;
+    display: inline-block;
+    margin: 0 20px;
     font-size: 18px;
 }
 
@@ -70,12 +90,5 @@ form.search-bar {
     padding: 10px 20px;
 }
 
-div.main-logo {
-    text-align: center;
-    display: flex;
-}
 
-ul.info {
-    list-style-type: none;
-    align-items: center;
-}
+
