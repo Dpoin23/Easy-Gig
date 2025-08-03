@@ -7,19 +7,19 @@ body {
     padding: 0px;
 }
 
-div.main {
+.main {
     display: flex;
     justify-content: center;
     margin-top: 2%;
 }
 
-ul.main-ul {
+.main-ul {
     list-style-type: none;
     padding: 0;
     text-align: center;
 }
 
-ul.Header {
+.Header {
     list-style-type: none;
     text-align: center;
     display: flex;
@@ -28,11 +28,11 @@ ul.Header {
     margin: 0;
 }
 
-li.main-obj {
+.main-obj {
     font-size: 16px;
 }
 
-li.Header-links {
+.Header-links {
     display: inline-block;
     margin: 0 20px;
     font-size: 18px;
@@ -46,20 +46,19 @@ a.Header-obj:hover {
     text-decoration: underline;
 }
 
-div.search-box {
+.search-box {
     text-align: center;
     align-items: center;
-    margin: 0 auto;
+    margin: 2% auto;
     height: auto;
     width: 750px;
-    margin-top: 2%;
     border: 0;
     padding: 10px;
     display: flex;
     justify-content: center;
 }
 
-input.search-input {
+.search-input {
     background: transparent;
     border: 0;
     flex: 1;
@@ -68,19 +67,19 @@ input.search-input {
     font-size: 18px;
 }
 
-button.search-button {
+.search-button {
     padding: 3px;
     font-size: 16px;
     border-radius: 60px;
     width: 75px;
     background-color: rgb(60, 60, 60);
     border-color: rgb(60, 60, 60);
-    color: rgb(245, 243, 243);
+    color: rgb(243, 243, 243);
     height: 30px;
     cursor: pointer;
 }
 
-form.search-bar {
+.search-bar {
     width: 100%;
     max-width: 700px;
     background-color: rgb(245, 243, 243);
@@ -90,5 +89,22 @@ form.search-bar {
     padding: 10px 20px;
 }
 
+.signin-body {
+    background-color: rgb(243, 243, 243);
+}
 
+.signin-box {
+    align-items: center;
+    width: 500px;
+    height: 500px;
+    outline: 1px solid rgb(122, 122, 122);
+    border-radius: 20px;
+    margin: 2% auto;
+    background-color: white;
+}
+
+.signin-ul {
+    list-style-type: none;
+    padding: 20px;
+}
 
