@@ -108,3 +108,46 @@ a.Header-obj:hover {
     padding: 20px;
 }
 
+.signin-li {
+    margin: 2%;
+    font-size: 18px;
+}
+
+.signin-logo {
+    display: flex;
+    justify-content: center;
+    margin-top: 2%;
+    margin-bottom: 3%;
+}
+
+.signin-ul input {
+    width: 435px;
+    height: 25px;
+    font-size: 18px;
+}
+
+.signin-button-div {
+    display: flex;
+    justify-content: center;
+    margin: 7.5% 2% 7.5% 2%;
+}
+
+.signin-button {
+    font-size: 18px;
+    width: 443px;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border: 0;
+}
+
+.signin-or {
+    margin-bottom: 7.5%;
+    text-align: center;
+    font-size: 18px;
+}
+
+.signin-li.signin-createacclink {
+    text-align: center;
+}
+
