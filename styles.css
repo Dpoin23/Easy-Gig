@@ -113,7 +113,7 @@ a.Header-obj:hover {
     font-size: 18px;
 }
 
-.signin-logo, .createacc-logo {
+.signin-logo, .createacc-logo, .post-logo {
     display: flex;
     justify-content: center;
     margin-top: 2%;
