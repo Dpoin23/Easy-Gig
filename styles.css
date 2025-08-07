@@ -89,11 +89,11 @@ a.Header-obj:hover {
     padding: 10px 20px;
 }
 
-.signin-body, .createacc-body {
+.signin-body, .createacc-body, .post-body {
     background-color: rgb(243, 243, 243);
 }
 
-.signin-box, .createacc-box {
+.signin-box, .createacc-box, .post-box {
     align-items: center;
     width: 500px;
     height: 500px;
@@ -103,12 +103,12 @@ a.Header-obj:hover {
     background-color: white;
 }
 
-.signin-ul, .createacc-ul {
+.signin-ul, .createacc-ul, .post-ul {
     list-style-type: none;
     padding: 20px;
 }
 
-.signin-li, .createacc-li {
+.signin-li, .createacc-li, .post-li {
     margin: 2%;
     font-size: 18px;
 }
@@ -120,19 +120,19 @@ a.Header-obj:hover {
     margin-bottom: 3%;
 }
 
-.signin-ul input, .createacc-li input {
+.signin-ul input, .createacc-li input, .post-ul input {
     width: 435px;
     height: 25px;
     font-size: 18px;
 }
 
-.signin-button-div, .createacc-button-div {
+.signin-button-div, .createacc-button-div, .post-button-div {
     display: flex;
     justify-content: center;
     margin: 7.5% 2% 7.5% 2%;
 }
 
-.signin-button, .createacc-button {
+.signin-button, .createacc-button, .post-button {
     font-size: 18px;
     width: 443px;
     border-radius: 10px;
@@ -149,6 +149,10 @@ a.Header-obj:hover {
 
 .signin-li.signin-createacclink {
     text-align: center;
+}
+
+.post-pay-label {
+    font-size: 16px;
 }
 
 

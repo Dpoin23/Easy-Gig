@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
+<body class="post-body">
     <ul class="Header">
         <li class="Header-links"><a href="index.html" class="Header-obj">Logo</a></li>
         <li class="Header-links"><a href="index.html" class="Header-obj">Home</a></li>
@@ -20,6 +20,27 @@
 
     <hr class="topline"/>
 
+    <div class="post-box">
+        <ul class="post-ul">
+            <li class="post-li"><strong>Gig Title</strong></li>
+            <li class="post-li"><input type="text" name="title"></li>
+            <li class="post-li"><strong>Description</strong></li>
+            <li class="post-li"><input type="text" maxlength="500" name="description"></li>
+            <li class="post-li"><strong>Location</strong></li>
+            <li class="post-li"><input type="text" name="location"></li>
+            <li class="post-li"><strong>Max Pay</strong><li>
+            <li class="post-li">
+                <label class="post-pay-label">Choose Type of Pay:</label>
+                <select>
+                    <option>One-time</option>
+                    <option>Hourly</option>
+                    <option>Yearly</option>
+                </select>
+            </li>
+            <li class="post-li"><input type="number" placeholder="0.00" name="pay"></li>
+            <div class="post-button-div"><button class="post-button">Create Post</button></div>
+        </ul>
+    </div>
     
 </body>
 
