@@ -22,6 +22,7 @@ body {
 .Header {
     list-style-type: none;
     text-align: center;
+    align-items: center;
     display: flex;
     justify-content: center;
     padding: 20px 0;
@@ -113,11 +114,19 @@ a.Header-obj:hover {
     font-size: 18px;
 }
 
-.signin-logo, .createacc-logo, .post-logo {
+.signin-logo {
     display: flex;
     justify-content: center;
-    margin-top: 2%;
-    margin-bottom: 3%;
+}
+
+.createacc-logo {
+    display: flex;
+    justify-content: center;
+}
+
+.post-logo {
+    display: flex;
+    justify-content: center;
 }
 
 .signin-ul input, .createacc-li input, .post-ul input {
@@ -154,7 +163,4 @@ a.Header-obj:hover {
 .post-pay-label {
     font-size: 16px;
 }
-
-
-
 
