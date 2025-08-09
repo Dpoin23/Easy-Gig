@@ -15,5 +15,5 @@ function createAccount(name, email, password, confirm) {
         alert("Passwords must match!");
     } 
     // add account to database and redirect to signin/home
-    alert(name + " " + email + " " + password + " " + confirm);
+    alert("Account created, redirecting to homepage.");
 }
