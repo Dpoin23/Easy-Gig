@@ -7,6 +7,30 @@ body {
     padding: 0px;
 }
 
+.Header {
+    list-style-type: none;
+    text-align: center;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    margin: 0;
+}
+
+.Header-links {
+    display: inline-block;
+    margin: 0 20px;
+    font-size: 20px;
+}
+
+a.Header-obj {
+    text-decoration: none;
+}
+
+a.Header-obj:hover {
+    text-decoration: underline;
+}
+
 .main {
     display: flex;
     justify-content: center;
@@ -19,32 +43,12 @@ body {
     text-align: center;
 }
 
-.Header {
-    list-style-type: none;
-    text-align: center;
-    align-items: center;
-    display: flex;
-    justify-content: center;
-    padding: 20px 0;
-    margin: 0;
-}
-
 .main-obj {
     font-size: 16px;
 }
 
-.Header-links {
-    display: inline-block;
-    margin: 0 20px;
-    font-size: 18px;
-}
-
-a.Header-obj {
-    text-decoration: none;
-}
-
-a.Header-obj:hover {
-    text-decoration: underline;
+.main-obj.main-logo {
+    margin: 0;
 }
 
 .search-box {
@@ -104,6 +108,10 @@ a.Header-obj:hover {
     background-color: white;
 }
 
+.post-box {
+    height: 525px;
+}
+
 .signin-ul, .createacc-ul, .post-ul {
     list-style-type: none;
     padding: 20px;
@@ -151,7 +159,7 @@ a.Header-obj:hover {
 }
 
 .signin-or {
-    margin-bottom: 7.5%;
+    margin: 5%;
     text-align: center;
     font-size: 18px;
 }
@@ -164,3 +172,14 @@ a.Header-obj:hover {
     font-size: 16px;
 }
 
+.signin-li.signin-createacclink {
+    margin: 5%;
+}
+
+.signin-box {
+    height: 450px;
+}
+
+.createacc-box {
+    height: 435px;
+}
