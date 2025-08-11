@@ -22,22 +22,24 @@
     <hr class="topline"/>
 
     <div class="signin-box">
-        <ul class="signin-ul">
-            <li class="signin-li"><strong>Email Address</strong></li>
-            <li class="signin-li"><input type="text"></li>
-            <li class="signin-li"><strong>Password</strong></li>
-            <li class="signin-li"><input type="password"></li>
+        <form id="signin-form">
+            <ul class="signin-ul">
+                <li class="signin-li"><strong>Email Address</strong></li>
+                <li class="signin-li"><input type="text" id="email" name="email" required></li>
 
-            <div class="signin-button-div"><button class="signin-button">Sign In</button></div>
-            <div class="signin-or">or</div>
-            
-            <li class="signin-li signin-createacclink"><a href="createacc.html" class="Header-obj">Create Account</a></li>
+                <li class="signin-li"><strong>Password</strong></li>
+                <li class="signin-li"><input type="password" id="password" name="password" required></li>
 
-            <div class="signin-logo"><img src="images/Logo.png" width="125px" height="50px"/></div>
-        </ul>
+                <div class="signin-button-div"><button class="signin-button" type="submit">Sign In</button></div>
+                <div class="signin-or">or</div>
+                <li class="signin-li signin-createacclink"><a href="createacc.html" class="Header-obj">Create Account</a></li>
+
+                <div class="signin-logo"><img src="images/Logo.png" width="125px" height="50px"/></div>
+            </ul>
+        </form>
     </div>
 
-    <script src="main.js"></script>
+    <script src="signin.js"></script>
 </body>
 
 </html>
