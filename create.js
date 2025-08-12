@@ -21,7 +21,8 @@ function passwordsDoNotMatch() {
     const passwordBox = document.getElementById("password");
     const confirmBox = document.getElementById("confirm");
 
-    errorMsg.textContent = "Error, passwords do not match.";
+    errorMsg.textContent = "Error, passwords do not match";
+    errorMsg.style.textAlign = "center";
     errorMsg.style.color = "red";
     errorMsg.style.fontSize = "16px";
     errorMsg.style.margin = "2%";
