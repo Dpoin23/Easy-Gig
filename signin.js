@@ -3,15 +3,20 @@ const form = document.getElementById("signin-form");
 form.addEventListener("submit", function(e) {
     e.preventDefault();
     const data = new FormData(this);
-    confirmAccount(data.get("email"), data.get("password"));
+    checkUser(data.get("email"), data.get("password"));
 });
 
-function confirmAccount(email, password) {
-    if (true) { // password not found
-        accountNotFound();
+function checkUser(email, password) {
+    if (confirmPassword(email, password)) { 
+        signin();
+        window.location.href=  "/index.html";
     } else {
-        alert("confirming email: " + email + " and password: " + password);
+        accountNotFound();
     }
+}
+
+function confirmPassword(email, password) {
+    // search db
 }
 
 function accountNotFound() {

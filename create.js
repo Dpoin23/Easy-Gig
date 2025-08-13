@@ -10,9 +10,13 @@ function createAccount(name, email, password, confirm) {
     if (password != confirm) {
         passwordsDoNotMatch();
     } else {
-        // add account to database and redirect to signin
-        alert("Account created, redirecting to signin.");
+        updateDB(name, email, password);
+        window.location.href = "/signin.html";
     }
+}
+
+function updateDB(name, email, password) {
+    // add user to the db
 }
 
 function passwordsDoNotMatch() {
