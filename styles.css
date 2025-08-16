@@ -94,11 +94,11 @@ a.Header-obj:hover {
     padding: 10px 20px;
 }
 
-.signin-body, .createacc-body, .post-body {
+.signin-body, .createacc-body, .post-body, .signout-body {
     background-color: rgb(243, 243, 243);
 }
 
-.signin-box, .createacc-box, .post-box {
+.signin-box, .createacc-box, .post-box, .signout-box {
     align-items: center;
     width: 500px;
     height: 500px;
@@ -149,7 +149,7 @@ a.Header-obj:hover {
     margin: 7.5% 2% 7.5% 2%;
 }
 
-.signin-button, .createacc-button, .post-button {
+.signin-button, .createacc-button, .post-button, .signout-button {
     font-size: 18px;
     width: 443px;
     border-radius: 10px;
@@ -178,4 +178,15 @@ a.Header-obj:hover {
 
 .signin-box {
     height: 450px;
+}
+
+.signout-box {
+    font-size: 18px;
+    text-align: center;
+    padding: 1%;
+    height: auto;
+}
+
+.signout-button {
+    margin: 2%;
 }
