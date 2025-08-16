@@ -22,11 +22,20 @@
 
     <div class="signout-box">
         Click below to sign out:
-        <button class="signout-button">Sign Out</button>
+        <button class="signout-button" id="signout-button">Sign Out</button>
     </div>
 
     <script src="main.js"></script>
     <script>
+        import { signout } from "/main.js";
+
+        const button = document.getElementById("signout-button");
+
+        button.addEventListener("click", function(e) {
+            e.preventDefault();
+            signout();
+            window.location.href = "/index.html";
+        });
 
     </script>
 </body>

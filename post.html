@@ -25,13 +25,20 @@
         <form id="post-form">
             <ul class="post-ul">
                 <li class="post-li"><strong>Gig Title</strong></li>
-                <li class="post-li"><input type="text" name="title" id="title" required></li>
+                <li class="post-li">
+                    <input type="text" name="title" id="title" required>
+                </li>
 
                 <li class="post-li"><strong>Description</strong></li>
-                <li class="post-li"><input type="text" maxlength="500" name="description" id="description" required></li>
+                <li class="post-li">
+                    <input type="text" maxlength="500" name="description" id="description" required>
+                </li>
 
                 <li class="post-li"><strong>Location</strong></li>
-                <li class="post-li"><input type="text" name="location" id="location" required></li>
+
+                <li class="post-li">
+                    <input type="text" name="location" id="location" required>
+                </li>
 
                 <li class="post-li"><strong>Max Pay</strong><li>
                 <li class="post-li">
@@ -42,11 +49,18 @@
                         <option value="yearly">Yearly</option>
                     </select>
                 </li>
-                <li class="post-li"><input type="number" placeholder="0.00" name="pay" id="pay" required></li>
 
-                <div class="post-button-div"><button class="post-button" type="submit">Create Post</button></div>
+                <li class="post-li">
+                    <input type="number" placeholder="0.00" name="pay" id="pay" required>
+                </li>
 
-                <div class="post-logo"><img src="images/Logo.png" width="125px" height="50px"/></div>
+                <li class="post-button-div">
+                    <button class="post-button" type="submit">Create Post</button>
+                </li>
+
+                <li class="post-logo">
+                    <img src="images/Logo.png" width="125px" height="50px"/>
+                </li>
             </ul>
         </form>
     </div>

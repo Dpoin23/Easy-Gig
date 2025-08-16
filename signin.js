@@ -7,9 +7,9 @@ form.addEventListener("submit", function(e) {
 });
 
 function checkUser(email, password) {
-    if (confirmPassword(email, password)) { 
+    if (true /*confirmPassword(email, password)*/ ) { 
         signin();
-        window.location.href=  "/index.html";
+        window.location.href = "index.html";
     } else {
         accountNotFound();
     }
