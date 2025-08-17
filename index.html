@@ -41,6 +41,10 @@
     <hr class="midline"/>
 
     <script src="main.js"></script>
+    <script>
+        const signedIn = sessionStorage.getItem("signedIn") === "true";
+        updateHeader(signedIn);
+    </script>
 </body>
 
 </html>

@@ -56,6 +56,10 @@
     </div>
 
     <script src="main.js"></script>
+    <script>
+        const signedIn = sessionStorage.getItem("signedIn") === "true";
+        updateHeader(signedIn);
+    </script>
     <script src="create.js"></script>
 </body>
 

@@ -11,7 +11,7 @@ function createAccount(name, email, password, confirm) {
         passwordsDoNotMatch();
     } else {
         updateDB(name, email, password);
-        window.location.href = "/signin.html";
+        window.location.href = "signin.html";
     }
 }
 
