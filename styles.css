@@ -191,4 +191,9 @@ a.Header-obj:hover {
     margin: 2%;
 }
 
-
+.create-error-message {
+    text-align: center;
+    color: red;
+    font-size: 16px;
+    margin: 2%;
+}

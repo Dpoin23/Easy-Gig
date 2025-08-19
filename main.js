@@ -8,9 +8,6 @@ function signout() {
 
 function updateHeader(signedIn) {
     const header = document.getElementById("header");
-    console.log(document.getElementById("signout-link"));
-    console.log(document.getElementById("signin-link"));
-
 
     if (signedIn) {
         
@@ -27,9 +24,7 @@ function updateHeader(signedIn) {
         profile.id = "profile-link";
 
         header.appendChild(profile);
-        //header.replaceChild(signout, document.getElementById("signin-link"));
         header.appendChild(signout);
-
         header.removeChild(signin);
 
     } else if (!signedIn && document.getElementById("signout-link") && document.getElementById("profile-link")) {
@@ -40,11 +35,8 @@ function updateHeader(signedIn) {
         signin.classList.add("Header-links");
         signin.id = "signin-link";
 
-        //header.replaceChild(signin, document.getElementById("signout-link"));
         header.removeChild(document.getElementById("signout-link"));
-
         header.removeChild(document.getElementById("profile-link"));
-
         header.insertBefore(signin, header.children[4]);
     }
 }
