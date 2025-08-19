@@ -15,14 +15,24 @@ function updateHeader(signedIn) {
     if (signedIn) {
         
         const signout = document.createElement("li");
+        const profile = document.createElement("li");
+        const signin = document.getElementById("signin-link");
 
         signout.innerHTML = "<a href='signout.html' class='Header-obj'>Sign Out</a>";
         signout.classList.add("Header-links");
         signout.id = "signout-link";
 
-        header.replaceChild(signout, document.getElementById("signin-link"));
+        profile.innerHTML = "<a href='profile.html' class='Header-obj'>Profile</a>";
+        profile.classList.add("Header-links");
+        profile.id = "profile-link";
 
-    } else if (!signedIn && document.getElementById("signout-link")) {
+        header.appendChild(profile);
+        //header.replaceChild(signout, document.getElementById("signin-link"));
+        header.appendChild(signout);
+
+        header.removeChild(signin);
+
+    } else if (!signedIn && document.getElementById("signout-link") && document.getElementById("profile-link")) {
 
         const signin = document.createElement("li");
 
@@ -30,6 +40,11 @@ function updateHeader(signedIn) {
         signin.classList.add("Header-links");
         signin.id = "signin-link";
 
-        header.replaceChild(signin, document.getElementById("signout-link"));
+        //header.replaceChild(signin, document.getElementById("signout-link"));
+        header.removeChild(document.getElementById("signout-link"));
+
+        header.removeChild(document.getElementById("profile-link"));
+
+        header.insertBefore(signin, header.children[4]);
     }
 }
