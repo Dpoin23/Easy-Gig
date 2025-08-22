@@ -4,6 +4,7 @@ const userSignedIn = sessionStorage.getItem("signedIn") === "true";
 form.addEventListener("submit", function(e) {
     e.preventDefault();
     const data = new FormData(this);
+    
     if (userSignedIn) {
         signedInWhileCreating();
     } else {

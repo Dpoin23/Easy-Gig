@@ -1,9 +1,7 @@
 # Easy-Gig project outline
 
 Current goals:
-    - ensure consistent storage of signed in variable across pages
-        - implement the appropriate html and css for the signed in state
-    - allow the user to signout when signed in
+    - DATABASE!
 
 - Homepage
     - Search system

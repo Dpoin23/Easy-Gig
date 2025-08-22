@@ -94,7 +94,7 @@ a.Header-obj:hover {
     padding: 10px 20px;
 }
 
-.signin-body, .createacc-body, .post-body, .signout-body {
+.signin-body, .createacc-body, .post-body, .signout-body, .profile-body {
     background-color: rgb(243, 243, 243);
 }
 
