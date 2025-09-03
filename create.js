@@ -21,8 +21,32 @@ function createAccount(name, email, password, confirm) {
     }
 }
 
-function updateDB(name, email, password) {
-    // add user to the db
+function updateDB(nm, em, pw) {
+    const data = {
+        name: nm,
+        email: em,
+        password: pw
+    };
+
+    fetch('/api/adduser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok)
+            throw new Error(`Error, status: ${response.status}`);
+        console.log(response);
+        return response.json();
+    })
+    .then(data => {
+        console.log(`data inserted successfully: ${data}`);
+    })
+    .catch(error => {
+        throw error;
+    });
 }
 
 function passwordsDoNotMatch() {

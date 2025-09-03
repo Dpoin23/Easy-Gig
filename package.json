@@ -2,7 +2,7 @@
   "name": "easy-gig",
   "version": "1.0.0",
   "description": "Current goals:\r     - DATABASE!",
-  "main": "main.js",
+  "main": "database.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,13 +11,15 @@
     "url": "git+https://github.com/Dpoin23/Easy-Gig.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "David Poindexter",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Dpoin23/Easy-Gig/issues"
   },
   "homepage": "https://github.com/Dpoin23/Easy-Gig#readme",
   "dependencies": {
+    "express": "^5.1.0",
     "mysql2": "^3.14.3"
-  }
+  },
+  "type": "module"
 }

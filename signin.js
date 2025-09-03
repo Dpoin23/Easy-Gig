@@ -7,7 +7,7 @@ form.addEventListener("submit", function(e) {
 });
 
 function checkUser(email, password) {
-    if (true /*confirmPassword(email, password)*/ ) { 
+    if (confirmPassword(email, password)) { 
         signin();
         window.location.href = "index.html";
     } else {
@@ -15,8 +15,21 @@ function checkUser(email, password) {
     }
 }
 
-function confirmPassword(email, password) {
-    // search db
+function confirmPassword(em, pw) {
+    // use email to fetch the password, confirm account by comparing passwords
+    const user = {
+        email: em
+    }
+
+    fetch('/api/getuser', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+    })
+    .then(response => response.json())
+    .then(user => console.log(user));
 }
 
 function accountNotFound() {
