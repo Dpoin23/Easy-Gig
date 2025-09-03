@@ -2,11 +2,12 @@
 // res.json(data) to get the data and send it back to the front end as a result 
 // use /api/name, response.json() to get the array to work with on the front end
 // test1: name: Test One, email: testone@gmail.com, password: testonedavid
-import express, { json } from 'express';
-import { createConnection } from 'mysql2';
+const mysql = require('mysql2');
+const express = require('express');
+const cors = require('cors');
 
 // Connect
-var db = createConnection({
+var db = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'Nextgen#23',
@@ -19,7 +20,8 @@ db.connect((err) => {
 });
 
 const app = express(); 
-app.use(json());
+app.use(cors());
+app.use(express.json());
 
 // Create 
 app.get('/createdb', (req, res) => {

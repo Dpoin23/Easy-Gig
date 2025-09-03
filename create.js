@@ -28,7 +28,7 @@ function updateDB(nm, em, pw) {
         password: pw
     };
 
-    fetch('/api/adduser', {
+    fetch('http://localhost:3000/api/adduser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

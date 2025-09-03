@@ -21,7 +21,7 @@ function confirmPassword(em, pw) {
         email: em
     }
 
-    fetch('/api/getuser', {
+    fetch('http://localhost:3000/api/getuser', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
