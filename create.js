@@ -29,17 +29,22 @@ function updateDB(nm, em, pw) {
     };
 
     fetch('http://localhost:3000/api/adduser', {
+
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
+        
     })
     .then(response => {
-        if (!response.ok)
-            throw new Error(`Error, status: ${response.status}`);
+
+        if (!response.ok) {
+            console.error('Status: ', response.status);
+        }
         console.log(response);
         return response.json();
+
     })
     .then(data => {
         console.log(`data inserted successfully: ${data}`);

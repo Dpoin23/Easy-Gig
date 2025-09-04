@@ -85,10 +85,9 @@ app.post('/api/adduser', (req, res) => {
 
 // Select
 app.get('/api/getuser', (req, res) => {
-    let sql = `SELECT * FROM users WHERE email = ${req.body.email}`;
-    db.query(sql, (err, result) => {
+    let sql = `SELECT id, password FROM users WHERE email = ?`;
+    db.query(sql, [req.query.email], (err, result) => {
         if (err) throw err;
-        console.log(result);
         res.json(result);
     })
 });
@@ -113,16 +112,6 @@ app.get('/getpost1/:id', (req, res) => {
     });
 });
 
-// Select test
-app.get('/selecttestone', (req, res) => {
-    let sql = "SELECT * FROM users";
-    db.query(sql, (err, result) => {
-        if (err) throw err;
-        console.log(result);
-        res.send("testone fetched");
-    });
-});
-
 // Update 
 app.get('/updatepost/:id', (req, res) => {
     let newTitle = "Updated Title";
@@ -131,6 +120,16 @@ app.get('/updatepost/:id', (req, res) => {
         if (err) throw err;
         console.log(result);
         res.send("post1 updated");
+    });
+});
+
+// Testing
+app.get('/selecttestone', (req, res) => {
+    let sql = "SELECT * FROM users";
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send("testone fetched");
     });
 });
 

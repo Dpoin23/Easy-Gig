@@ -6,8 +6,9 @@ form.addEventListener("submit", function(e) {
     checkUser(data.get("email"), data.get("password"));
 });
 
-function checkUser(email, password) {
-    if (confirmPassword(email, password)) { 
+async function checkUser(email, password) {
+    const match = await confirmPassword(email, password);
+    if (match) { 
         signin();
         window.location.href = "index.html";
     } else {
@@ -16,20 +17,29 @@ function checkUser(email, password) {
 }
 
 function confirmPassword(em, pw) {
-    // use email to fetch the password, confirm account by comparing passwords
-    const user = {
-        email: em
-    }
+    return fetch(`http://localhost:3000/api/getuser?email=${em}`)
+    .then(response => {
 
-    fetch('http://localhost:3000/api/getuser', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
+        if (!response.ok) {
+            console.error('could not find email');
+            return false;
+        }
+        return response.json();
+
     })
-    .then(response => response.json())
-    .then(user => console.log(user));
+    .then(user => {
+
+        const data = user[0];
+        sessionStorage.setItem('userId', data.id);
+        return data.password == pw;
+
+    })
+    .catch(error => {
+
+        console.error(error);
+        return false;
+
+    });
 }
 
 function accountNotFound() {

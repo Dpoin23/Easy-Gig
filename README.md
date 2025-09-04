@@ -14,3 +14,4 @@ Current goals:
 - contact us?
     - write a review
     - include in about section
+- Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
