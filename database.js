@@ -1,7 +1,3 @@
-// Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-// res.json(data) to get the data and send it back to the front end as a result 
-// use /api/name, response.json() to get the array to work with on the front end
-// test1: name: Test One, email: testone@gmail.com, password: testonedavid
 const mysql = require('mysql2');
 const express = require('express');
 const cors = require('cors');
@@ -23,7 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Create 
+// Create and alter
 app.get('/createdb', (req, res) => {
     let sql = "CREATE DATABASE easy_gig";
     db.query(sql, (err, result) => {
@@ -67,6 +63,15 @@ app.get('/createuserstable', (req, res) => {
     });
 });
 
+app.get('/adduseridtoposts', (req, res) => {
+    let sql = 'ALTER TABLE posts ADD COLUMN user_id INT';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('user_id column added in the posts table');
+    });
+});
+
 // Insert
 app.post('/api/adduser', (req, res) => {
     let account = {
@@ -90,16 +95,6 @@ app.get('/api/getuser', (req, res) => {
         if (err) throw err;
         res.json(result);
     })
-});
-
-app.get('/getposts', (req, res) => {
-    let sql = "SELECT * FROM posts";
-    let query = db.query(sql, (err, results) => {
-        if (err) throw err;
-        console.log(results);
-        res.send("posts fetched");
-    });
-
 });
 
 // Select individual 

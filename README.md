@@ -1,17 +1,13 @@
 # Easy-Gig project outline
 
 Current goals:
-    - DATABASE!
+    - post table / searching / display results / bid system
 
-- Homepage
-    - Search system
-- bid system?
-- create an account/profile
-    - specify whether company or not?
-    - possibly create a database for users and/or companies
-- create a post
-    - database for posts
 - contact us?
     - write a review
     - include in about section
-- Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+- profile section
+    - display my posts
+
+Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+account test1 => name: Test One, email: testone@gmail.com, password: testonedavid

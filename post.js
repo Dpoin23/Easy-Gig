@@ -14,6 +14,10 @@ function post(title, description, location, payType, pay) {
     }
 }
 
+function addPostToDB() {
+    
+}
+
 function requireSignIn() {
     const ul = document.getElementById("post-ul");
     const required = document.createElement("li");
