@@ -40,3 +40,40 @@ function updateHeader(signedIn) {
         header.insertBefore(signin, header.children[4]);
     }
 }
+
+const search_form = document.getElementById('search-bar');
+
+search_form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = new FormData(this);
+
+    if (data.get('search-select') == 'Title') {
+        searchTitle(data.get('search'));
+    } else if (data.get('search-select') == 'Location') {
+        searchLocation(data.get('search'));
+    } else if (data.get('search-select') == 'Type') {
+        searchType(data.get('search'));
+    } else {
+        searchPay(data.get('search'));
+    }
+});
+
+function searchTitle(search) {
+
+}
+
+function searchLocation(search) {
+
+}
+
+function searchType(search) {
+
+}
+
+function searchPay(search) {
+
+}
+
+function display() {
+
+}
