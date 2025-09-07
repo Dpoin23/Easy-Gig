@@ -37,7 +37,7 @@ app.get('/createpoststable', (req, res) => {
         location VARCHAR(255),
         max_pay DECIMAL(8, 2),
         type_of_pay VARCHAR(255),
-        PRIMARY KEY(id
+        PRIMARY KEY(id)
         )`;
 
     db.query(sql, (err, result) => {
@@ -88,6 +88,24 @@ app.post('/api/adduser', (req, res) => {
     });
 });
 
+app.post('/api/addpost', (req, res) => {
+    let post = {
+        title: req.body.title,
+        description: req.body.description,
+        location: req.body.location,
+        max_pay: req.body.pay,
+        type_of_pay: req.body.payType,
+        user_id: req.body.user_id
+    };
+
+    let sql = 'INSERT INTO posts SET ?';
+    db.query(sql, post, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('post added');
+    })
+})
+
 // Select
 app.get('/api/getuser', (req, res) => {
     let sql = `SELECT id, password FROM users WHERE email = ?`;
@@ -128,6 +146,15 @@ app.get('/selecttestone', (req, res) => {
     });
 });
 
+app.get('/selectposttest', (req, res) => {
+    let sql = "SELECT * FROM posts";
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('test post fetched');
+    })
+});
+
 // Delete 
 app.get('/deletepost/:id', (req, res) => {
     let sql = `DELETE FROM posts WHERE id = ${req.params.id}`;
@@ -135,6 +162,15 @@ app.get('/deletepost/:id', (req, res) => {
         if (err) throw err;
         console.log(result);
         res.send("post1 deleted");
+    });
+});
+
+app.get('/deletespecificpostfortesting', (req, res) => {
+    let sql = 'DELETE FROM posts WHERE id = 3';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('post deleted');
     });
 });
 

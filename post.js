@@ -8,14 +8,41 @@ form.addEventListener("submit", function(e) {
 
 function post(title, description, location, payType, pay) {
     if (sessionStorage.getItem("signedIn") == "true") {
-        alert("Post: " + title + description + location + payType + pay);
+        addPostToDB(title, description, location, payType, pay);
     } else {
         requireSignIn();
     }
 }
 
-function addPostToDB() {
-    
+function addPostToDB(ti, dsp, loc, pT, p) {
+    const uID = sessionStorage.getItem('userId');
+    data = {
+        title: ti,
+        description: dsp,
+        location: loc,
+        pay: p,
+        payType: pT,
+        user_id: uID
+    };
+
+    fetch('http://localhost:3000/api/addpost', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        
+        if(!response.ok) {
+            console.error('Status: ', response.status);
+        }
+        console.log(response);
+        return response.json();
+
+    })
+    .then(data => { console.log('Data inserted successfully: ', data); })
+    .catch(error => { throw error; })
 }
 
 function requireSignIn() {
