@@ -58,22 +58,80 @@ search_form.addEventListener('submit', function(e) {
     }
 });
 
-function searchTitle(search) {
-
-}
-
-function searchLocation(search) {
-
-}
-
-function searchType(search) {
-
-}
-
-function searchPay(search) {
-
-}
-
 function display() {
 
+}
+
+function couldNotFind(message) {
+    const main_body = document.getElementById('main-body');
+    const response_message_div = document.createElement('div');
+
+    response_message_div.innerText = `${message}`;
+    response_message_div.style.color = 'red';
+    response_message_div.style.fontSize = '18px';
+    response_message_div.style.margin = '2%';
+    response_message_div.style.display = 'flex';
+    response_message_div.style.justifyContent = 'center';
+
+    main_body.appendChild(response_message_div);
+}
+
+async function searchTitle(search) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getpostsbytitle?search=${search}`);
+
+        if (!response.ok) {
+            couldNotFind(`Could not find any posts with the title: "${search}"`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function searchLocation(search) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getpostsbylocation?search=${search}`);
+
+        if (!response.ok) {
+            couldNotFind(`Could not find any posts with the location: "${search}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function searchType(search) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getpostsbytype?search=${search}`);
+
+        if (!response.ok) {
+            couldNotFind(`Could not find any posts with type of pay: "${search}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function searchPay(search) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getpostsbypay?search=${search}`);
+
+        if (!response.ok) {
+            couldNotFind(`Could not find any posts with type of pay: "${search}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error(error);
+    }
 }

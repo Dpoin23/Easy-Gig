@@ -115,6 +115,38 @@ app.get('/api/getuser', (req, res) => {
     })
 });
 
+app.get('/api/getpostsbytitle', (req, res) => {
+    let sql = `SELECT * FROM posts WHERE title = ?`;
+    db.query(sql, [req.query.search], (err, result) => {
+        if (err) throw err;
+        res.json(result);
+    })
+});
+
+app.get('/api/getpostsbylocation', (req, res) => {
+    let sql = `SELECT * FROM posts WHERE location = ?`;
+    db.query(sql, req.query.search, (err, result) => {
+        if (err) throw err;
+        res.json(result);
+    });
+});
+
+app.get('/api/getpostsbytype', (req, res) => {
+    let sql = `SELECT * FROM posts WHERE type_of_pay = ?`;
+    db.query(sql, req.query.search, (err, result) => {
+        if (err) throw err;
+        res.json(result);
+    });
+});
+
+app.get('/api/getpostsbypay', (req, res) => {
+    let sql = `SELECT * FROM posts WHERE max_pay = ?`;
+    db.query(sql, req.query.search, (err, result) => {
+        if (err) throw err;
+        res.json(result);
+    });
+});
+
 // Select individual 
 app.get('/getpost1/:id', (req, res) => {
     let sql = `SELECT * FROM posts WHERE id = ${req.params.id}`;
