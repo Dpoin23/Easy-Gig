@@ -58,8 +58,23 @@ search_form.addEventListener('submit', function(e) {
     }
 });
 
-function display() {
+function display(data) {
+    data.forEach(function(point) {
+        const body = document.getElementById('main-body');
+        const box = document.createElement('div');
 
+        box.classList.add('display');
+        box.innerHTML = `<div class="display-title">${point.title}</div>
+                        <label><strong>Description</strong></label>
+                        <p class="display-description">${point.description}</p>
+                        <div class="display-info">
+                            <div class="display-location">Location: ${point.location}</div>
+                            <div class="display-type">Type of Pay: ${point.type_of_pay}</div>
+                            <div class="display-pay">Pay: $${point.max_pay}</div>
+                        </div>`;
+        
+        body.appendChild(box);
+    });
 }
 
 function couldNotFind(message) {
@@ -86,6 +101,7 @@ async function searchTitle(search) {
 
         const data = await response.json();
         console.log(data);
+        display(data);
     } catch (err) {
         console.error(err);
     }
@@ -101,6 +117,7 @@ async function searchLocation(search) {
 
         const data = await response.json();
         console.log(data);
+        display(data);
     } catch (error) {
         console.error(error);
     }
@@ -116,6 +133,7 @@ async function searchType(search) {
 
         const data = await response.json();
         console.log(data);
+        display(data);
     } catch (error) {
         console.error(error);
     }
@@ -131,6 +149,7 @@ async function searchPay(search) {
 
         const data = await response.json();
         console.log(data);
+        display(data);
     } catch (error) {
         console.error(error);
     }

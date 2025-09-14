@@ -147,16 +147,6 @@ app.get('/api/getpostsbypay', (req, res) => {
     });
 });
 
-// Select individual 
-app.get('/getpost1/:id', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE id = ${req.params.id}`;
-    let query = db.query(sql, (err, result) => {
-        if (err) throw err;
-        console.log(result);
-        res.send("post1 fetched");
-    });
-});
-
 // Update 
 app.get('/updatepost/:id', (req, res) => {
     let newTitle = "Updated Title";
@@ -169,7 +159,7 @@ app.get('/updatepost/:id', (req, res) => {
 });
 
 // Testing
-app.get('/selecttestone', (req, res) => {
+app.get('/selectusers', (req, res) => {
     let sql = "SELECT * FROM users";
     db.query(sql, (err, result) => {
         if (err) throw err;
@@ -178,7 +168,7 @@ app.get('/selecttestone', (req, res) => {
     });
 });
 
-app.get('/selectposttest', (req, res) => {
+app.get('/selectposts', (req, res) => {
     let sql = "SELECT * FROM posts";
     db.query(sql, (err, result) => {
         if (err) throw err;
@@ -206,6 +196,7 @@ app.get('/deletespecificpostfortesting', (req, res) => {
     });
 });
 
+// Listen
 app.listen('3000', () => {
     console.log("Server started on port 3000");
 });
