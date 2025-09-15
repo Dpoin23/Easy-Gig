@@ -1,7 +1,7 @@
 # Easy-Gig project outline
 
 Current goals:
-    - searching / display results / bid system
+    - bid system
 
 - contact us?
     - write a review

@@ -72,6 +72,15 @@ app.get('/adduseridtoposts', (req, res) => {
     });
 });
 
+app.get('/addbidtoposts', (req, res) => {
+    let sql = 'ALTER TABLE posts ADD COLUMN current_bid INT DEFAULT 0';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('bid column added to posts table, with default value 0');
+    });
+});
+
 // Insert
 app.post('/api/adduser', (req, res) => {
     let account = {
