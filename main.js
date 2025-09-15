@@ -72,7 +72,7 @@ function display(data) {
                             <div class="display-type">Type of Pay: ${point.type_of_pay}</div>
                             <div class="display-pay">Pay: $${point.max_pay}</div>
                         </div>`;
-        
+            
         body.appendChild(box);
     });
 }
@@ -100,8 +100,12 @@ async function searchTitle(search) {
         }
 
         const data = await response.json();
-        console.log(data);
-        display(data);
+
+        if (data.length == 0) {
+            couldNotFind(`Could not find any posts with the title: ${search}`);
+        } else {
+            display(data);
+        }
     } catch (err) {
         console.error(err);
     }
@@ -116,8 +120,12 @@ async function searchLocation(search) {
         }
 
         const data = await response.json();
-        console.log(data);
-        display(data);
+
+        if (data.length == 0) {
+            couldNotFind(`Could not find any posts with the location: ${search}`);
+        } else {
+            display(data);
+        }
     } catch (error) {
         console.error(error);
     }
@@ -132,8 +140,12 @@ async function searchType(search) {
         }
 
         const data = await response.json();
-        console.log(data);
-        display(data);
+
+        if (data.length == 0) {
+            couldNotFind(`Could not find any posts with the type: ${search}`);
+        } else {
+            display(data);
+        }
     } catch (error) {
         console.error(error);
     }
@@ -148,8 +160,12 @@ async function searchPay(search) {
         }
 
         const data = await response.json();
-        console.log(data);
-        display(data);
+
+        if (data.length == 0) {
+            couldNotFind(`Could not find any posts with pay: ${search}`);
+        } else {
+            display(data);
+        }
     } catch (error) {
         console.error(error);
     }
