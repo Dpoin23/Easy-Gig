@@ -156,6 +156,14 @@ app.get('/api/getpostsbypay', (req, res) => {
     });
 });
 
+app.get('/api/getpostsbyuserid', (req, res) => {
+    let sql = `SELECT * FROM posts WHERE user_id = ?`;
+    db.query(sql, req.query.search, (err, result) => {
+        if (err) throw err;
+        res.json(result);
+    })
+});
+
 // Update 
 app.get('/updatepost/:id', (req, res) => {
     let newTitle = "Updated Title";

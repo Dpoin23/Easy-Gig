@@ -72,7 +72,7 @@ a.Header-obj:hover {
     font-size: 18px;
 }
 
-.search-button {
+.search-button, .display-input-button {
     padding: 3px;
     font-size: 16px;
     border-radius: 60px;
@@ -219,7 +219,7 @@ a.Header-obj:hover {
     display: grid;
     align-items: center;
     border: 1px solid black;
-    height: 150px;
+    height: auto;
     width: 750px;
     max-width: 750px;
     border-radius: 10px;
@@ -250,6 +250,7 @@ a.Header-obj:hover {
     display: flex;
     justify-content: space-between;
     gap: 10px;
+    margin-bottom: 5px;
 }
 
 .display-location {
@@ -265,4 +266,22 @@ a.Header-obj:hover {
 .display-pay {
     width: 140px;
     max-width: 140px;
+}
+
+.display-bid {
+    padding: 5px;
+    border-radius: 10px;
+    height: auto;
+    border: 1px solid black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.display-input {
+    font-size: 16px;
+    width: 150px;
+    border-radius: 
 }
