@@ -59,8 +59,10 @@ search_form.addEventListener('submit', function(e) {
 });
 
 function display(data) {
+    const results = document.getElementById('search-results');
+    results.innerHTML = "";
+
     data.forEach(function(point) {
-        const body = document.getElementById('main-body');
         const box = document.createElement('div');
 
         box.classList.add('display');
@@ -73,14 +75,15 @@ function display(data) {
                             <div class="display-pay">Pay: $${point.max_pay}</div>
                         </div>`;
             
-        body.appendChild(box);
+        results.appendChild(box);
     });
 }
 
 function couldNotFind(message) {
-    const main_body = document.getElementById('main-body');
-    const response_message_div = document.createElement('div');
+    const results = document.getElementById('search-results');
+    results.innerHTML = "";
 
+    const response_message_div = document.createElement('div');
     response_message_div.innerText = `${message}`;
     response_message_div.style.color = 'red';
     response_message_div.style.fontSize = '18px';
@@ -88,7 +91,7 @@ function couldNotFind(message) {
     response_message_div.style.display = 'flex';
     response_message_div.style.justifyContent = 'center';
 
-    main_body.appendChild(response_message_div);
+    results.appendChild(response_message_div);
 }
 
 async function searchTitle(search) {
