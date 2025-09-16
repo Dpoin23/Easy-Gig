@@ -73,6 +73,15 @@ function display(data) {
                             <div class="display-location">Location: ${point.location}</div>
                             <div class="display-type">Type of Pay: ${point.type_of_pay}</div>
                             <div class="display-pay">Pay: $${point.max_pay}</div>
+                        </div>
+                        <div class="display-bid">
+                            <div>Current Bid: $${point.current_bid}</div>
+                            <div>
+                                <form class="bid-form" id="bid-form">
+                                    <input type="number" name="bid" id="bid" placeholder="Enter A Bid . . ." class="display-input" required>
+                                    <button class="display-input-button" type="submit">Place</button>
+                                </form>
+                            </div>
                         </div>`;
             
         results.appendChild(box);

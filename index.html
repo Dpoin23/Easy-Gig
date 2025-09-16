@@ -49,26 +49,6 @@
 
     <div id="search-results"></div>
 
-    <div class="display">
-        <div class="display-title">${point.title}</div>
-            <label><strong>Description</strong></label>
-            <p class="display-description">${point.description}</p>
-            <div class="display-info">
-                <div class="display-location">Location: ${point.location}</div>
-                <div class="display-type">Type of Pay: One-Time</div>
-                <div class="display-pay">Pay: $000000.00</div>
-            </div>
-            <div class="display-bid">
-                <div>Current Bid: $000000.00</div>
-                <div>
-                    <form class="bid-form" id="bid-form">
-                        <input type="number" name="bid" id="bid" placeholder="Enter A Bid . . ." class="display-input" required>
-                        <button class="display-input-button" type="submit">Place</button>
-                    </form>
-                </div>
-            </div>
-    </div>
-
     <script src="main.js"></script>
     <script>
         const signedIn = sessionStorage.getItem("signedIn") === "true";
