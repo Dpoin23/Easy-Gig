@@ -77,15 +77,54 @@ function display(data) {
                         <div class="display-bid">
                             <div>Current Bid: $${point.current_bid}</div>
                             <div>
-                                <form class="bid-form" id="bid-form">
-                                    <input type="number" name="bid" id="bid" placeholder="Enter A Bid . . ." class="display-input" required>
+                                <form class="bid-form">
+                                    <input type="number" step="0.01" name="bid" placeholder="Enter A Bid . . ." class="display-input" required>
                                     <button class="display-input-button" type="submit">Place</button>
                                 </form>
                             </div>
                         </div>`;
             
         results.appendChild(box);
+
+        const display_form = box.querySelector('form');
+        display_form.addEventListener('submit', function(b) {
+            b.preventDefault();
+            const event_data = new FormData(this);
+            bid = parseFloat(event_data.get('bid'));
+
+            if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
+                //update current bid and refresh the page after alerting bid placed
+                updateBid(point, bid);
+            } else {
+                alert('Bid is not valid.');
+            }
+        });
     });
+}
+
+async function updateBid(post, bid) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/updatecurrentbid/${post.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ current_bid: bid })
+        });
+
+        if (!response.ok) {
+            throw new Error('failed to update bid');
+        }
+
+        const update = await response.json();
+        console.log('Post updated: ', update);
+        alert('Bid placed!');
+        const results = document.getElementById('search-results');
+        results.innerHTML = "";
+    } catch (error) {
+        console.error(error);
+    } 
+
 }
 
 function couldNotFind(message) {

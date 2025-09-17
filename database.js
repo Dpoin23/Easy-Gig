@@ -81,6 +81,15 @@ app.get('/addbidtoposts', (req, res) => {
     });
 });
 
+app.get('/adddecimaltobid', (req, res) => {
+    let sql = 'ALTER TABLE posts MODIFY current_bid DECIMAL(8, 2)';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send('bid type updated, now includes decimals, max 8 digits with two decimal places.');
+    });
+});
+
 // Insert
 app.post('/api/adduser', (req, res) => {
     let account = {
@@ -174,6 +183,15 @@ app.get('/updatepost/:id', (req, res) => {
         res.send("post1 updated");
     });
 });
+
+app.put('/api/updatecurrentbid/:id', (req, res) => {
+    let sql = `UPDATE posts SET current_bid = ${req.body.current_bid} WHERE id = ${req.params.id}`;
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.json(result);
+    });
+})
 
 // Testing
 app.get('/selectusers', (req, res) => {
