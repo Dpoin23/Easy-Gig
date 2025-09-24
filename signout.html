@@ -28,8 +28,12 @@
         </form>
     </div>
 
-    <script src="main.js"></script>
     <script>
+        function signout() {
+            sessionStorage.setItem("signedIn", "false");
+            sessionStorage.setItem('mypostsdisplay', 'false');
+        }
+
         const form = document.getElementById("signout-form");
         form.addEventListener("submit", function(e) {
             e.preventDefault();

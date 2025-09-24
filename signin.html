@@ -46,7 +46,12 @@
         </form>
     </div>
 
-    <script src="main.js"></script>
+    <script>
+        function signin() {
+            sessionStorage.setItem("signedIn", "true");
+            sessionStorage.setItem('mypostsdisplay', 'false');
+        }
+    </script>
     <script src="signin.js"></script>
 </body>
 

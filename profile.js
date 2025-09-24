@@ -67,6 +67,8 @@ function displayPosts(posts) {
             alert('trying to delete');
             deletePost(post.id);
 
+            // refresh page, display without deleted post
+
         });
     });
 }
