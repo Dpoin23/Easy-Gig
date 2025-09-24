@@ -65,6 +65,8 @@ function displayPosts(posts) {
             event.preventDefault();
 
             alert('trying to delete');
+            deletePost(post.id);
+
         });
     });
 }
@@ -77,4 +79,26 @@ function updateDisplayButton(display) {
         const button = document.getElementById('mypostsbutton');
         button.innerText = 'Hide My Posts';
     }
+}
+
+function deletePost(post_id) {
+    fetch('http://localhost:3000/api/deletepostbyid', {
+        method: 'DELETE',
+        headers: {
+            'Content-type': 'application/json'
+        },
+        body: JSON.stringify({ postId: post_id})
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('status: ', response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete successful: ', data);
+    })
+    .catch(err => {
+        console.error(err);
+    })
 }

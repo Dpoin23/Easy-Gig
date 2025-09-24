@@ -213,6 +213,14 @@ app.get('/selectposts', (req, res) => {
 });
 
 // Delete 
+app.delete('/api/deletepostbyid', (req, res) => {
+    let sql = 'DELETE FROM posts WHERE id = ?';
+    db.query(sql, req.body.postId, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+    });
+});
+
 app.get('/deletepost/:id', (req, res) => {
     let sql = `DELETE FROM posts WHERE id = ${req.params.id}`;
     let query = db.query(sql, (err, result) => {
