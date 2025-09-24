@@ -135,7 +135,7 @@ app.get('/api/getuser', (req, res) => {
 
 app.get('/api/getpostsbytitle', (req, res) => {
     let sql = `SELECT * FROM posts WHERE title = ?`;
-    db.query(sql, [req.query.search], (err, result) => {
+    db.query(sql, req.query.search, (err, result) => {
         if (err) throw err;
         res.json(result);
     })
@@ -167,7 +167,7 @@ app.get('/api/getpostsbypay', (req, res) => {
 
 app.get('/api/getpostsbyuserid', (req, res) => {
     let sql = `SELECT * FROM posts WHERE user_id = ?`;
-    db.query(sql, req.query.search, (err, result) => {
+    db.query(sql, req.query.user_id, (err, result) => {
         if (err) throw err;
         res.json(result);
     })

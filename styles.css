@@ -72,7 +72,7 @@ a.Header-obj:hover {
     font-size: 18px;
 }
 
-.search-button, .display-input-button {
+.search-button, .display-input-button, .mypostsbutton {
     padding: 3px;
     font-size: 16px;
     border-radius: 60px;
@@ -283,4 +283,18 @@ a.Header-obj:hover {
 .display-input {
     font-size: 16px;
     width: 150px;
+}
+
+.displaymyposts {
+    display: flex;
+    justify-content: center;
+    margin: 2%;
+}
+
+.mypostsbutton {
+    width: 150px;
+}
+
+.myposts {
+    background-color: white;
 }

@@ -1,9 +1,11 @@
 function signin() {
     sessionStorage.setItem("signedIn", "true");
+    sessionStorage.setItem('mypostsdisplay', 'false');
 }
 
 function signout() {
     sessionStorage.setItem("signedIn", "false");
+    sessionStorage.setItem('mypostsdisplay', 'false');
 }
 
 function updateHeader(signedIn) {
@@ -59,8 +61,8 @@ search_form.addEventListener('submit', function(e) {
 });
 
 function display(data) {
+    clearSearch();
     const results = document.getElementById('search-results');
-    results.innerHTML = "";
 
     data.forEach(function(point) {
         const box = document.createElement('div');
@@ -93,7 +95,6 @@ function display(data) {
             bid = parseFloat(event_data.get('bid'));
 
             if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
-                //update current bid and refresh the page after alerting bid placed
                 updateBid(point, bid);
             } else {
                 alert('Bid is not valid.');
@@ -119,8 +120,7 @@ async function updateBid(post, bid) {
         const update = await response.json();
         console.log('Post updated: ', update);
         alert('Bid placed!');
-        const results = document.getElementById('search-results');
-        results.innerHTML = "";
+        clearSearch();
     } catch (error) {
         console.error(error);
     } 
@@ -128,8 +128,7 @@ async function updateBid(post, bid) {
 }
 
 function couldNotFind(message) {
-    const results = document.getElementById('search-results');
-    results.innerHTML = "";
+    clearSearch();
 
     const response_message_div = document.createElement('div');
     response_message_div.innerText = `${message}`;
@@ -220,4 +219,9 @@ async function searchPay(search) {
     } catch (error) {
         console.error(error);
     }
+}
+
+function clearSearch() {
+    const results = document.getElementById('search-results');
+    results.innerHTML = '';
 }
