@@ -1,4 +1,40 @@
-//update the user info
+const userData = JSON.parse(sessionStorage.getItem('user'));
+console.log(userData);
+const profileBox = document.getElementById('profile-box');
+profileBox.innerHTML = `<form id="edit-profile-form">
+                            <ul class="createacc-ul" id="profile-ul">
+                                <li class="createacc-li"><strong>Name</strong></li>
+                                <li class="createacc-li profile-notediting-li">
+                                    ${userData.name}
+                                </li>
+
+                                <li class="createacc-li"><strong>Email Address</strong></li>
+                                <li class="createacc-li profile-notediting-li">
+                                    ${userData.email}
+                                </li>
+
+                                <li class="createacc-li"><strong>Password</strong></li>
+                                <li class="createacc-li profile-notediting-li">
+                                    ${userData.password}
+                                </li>
+
+                                <li class="createacc-button-div">
+                                    <button class="createacc-button" type="submit">Edit</button>
+                                </li>
+                            </ul>
+                        </form>`;
+
+const editForm = document.getElementById('edit-profile-form');
+editForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    alert('now editing');
+
+    // allow user to edit fields
+    // <input type="text" id="name" name="name" required>
+    // <input type="text" id="email" name="email" required>
+    // <input type="password" id="password" name="password" minlength="8" maxlength="64" required>
+    // <button class="createacc-button" type="submit">Save</button>
+});
 
 const postsform = document.getElementById('mypostsform');
 sessionStorage.setItem('mypostsdisplay', 'false');

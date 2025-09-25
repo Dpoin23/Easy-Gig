@@ -31,6 +31,8 @@ function confirmPassword(em, pw) {
 
         const data = user[0];
         sessionStorage.setItem('userId', data.id);
+        sessionStorage.setItem('user', JSON.stringify(data));
+        console.log(data);
         return data.password == pw;
 
     })

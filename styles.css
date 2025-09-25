@@ -298,3 +298,13 @@ a.Header-obj:hover {
 .myposts {
     background-color: white;
 }
+
+.profile-box {
+    height: 340px;
+}
+
+.profile-notediting-li {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 5px;
+}

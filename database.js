@@ -126,7 +126,7 @@ app.post('/api/addpost', (req, res) => {
 
 // Select
 app.get('/api/getuser', (req, res) => {
-    let sql = `SELECT id, password FROM users WHERE email = ?`;
+    let sql = `SELECT * FROM users WHERE email = ?`;
     db.query(sql, [req.query.email], (err, result) => {
         if (err) throw err;
         res.json(result);
