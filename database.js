@@ -120,7 +120,7 @@ app.post('/api/addpost', (req, res) => {
     db.query(sql, post, (err, result) => {
         if (err) throw err;
         console.log(result);
-        res.send('post added');
+        res.json(result);
     })
 })
 

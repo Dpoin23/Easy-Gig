@@ -1,4 +1,8 @@
+//update the user info
+
 const postsform = document.getElementById('mypostsform');
+sessionStorage.setItem('mypostsdisplay', 'false');
+document.getElementById('myposts').innerHTML = '';
 
 postsform.addEventListener('submit', async function(event) {
     event.preventDefault();
@@ -63,11 +67,9 @@ function displayPosts(posts) {
         const delete_form = box.querySelector('form');
         delete_form.addEventListener('submit', function(event) {
             event.preventDefault();
-
-            alert('trying to delete');
+            alert('deleting post. . .');
             deletePost(post.id);
-
-            // refresh page, display without deleted post
+            postsbox.removeChild(box);
 
         });
     });
