@@ -1,25 +1,25 @@
+localStorage.setItem('editing', 'false');
 const userData = JSON.parse(sessionStorage.getItem('user'));
-console.log(userData);
 const profileBox = document.getElementById('profile-box');
 profileBox.innerHTML = `<form id="edit-profile-form">
                             <ul class="createacc-ul" id="profile-ul">
                                 <li class="createacc-li"><strong>Name</strong></li>
-                                <li class="createacc-li profile-notediting-li">
+                                <li class="createacc-li profile-notediting-li" id="name-li">
                                     ${userData.name}
                                 </li>
 
                                 <li class="createacc-li"><strong>Email Address</strong></li>
-                                <li class="createacc-li profile-notediting-li">
+                                <li class="createacc-li profile-notediting-li" id="email-li">
                                     ${userData.email}
                                 </li>
 
                                 <li class="createacc-li"><strong>Password</strong></li>
-                                <li class="createacc-li profile-notediting-li">
+                                <li class="createacc-li profile-notediting-li" id="password-li">
                                     ${userData.password}
                                 </li>
 
                                 <li class="createacc-button-div">
-                                    <button class="createacc-button" type="submit">Edit</button>
+                                    <button class="createacc-button" type="submit" id="button-li">Edit</button>
                                 </li>
                             </ul>
                         </form>`;
@@ -27,13 +27,42 @@ profileBox.innerHTML = `<form id="edit-profile-form">
 const editForm = document.getElementById('edit-profile-form');
 editForm.addEventListener('submit', function(event) {
     event.preventDefault();
-    alert('now editing');
 
-    // allow user to edit fields
-    // <input type="text" id="name" name="name" required>
-    // <input type="text" id="email" name="email" required>
-    // <input type="password" id="password" name="password" minlength="8" maxlength="64" required>
-    // <button class="createacc-button" type="submit">Save</button>
+    const status = localStorage.getItem('editing') === 'false';
+    const nameLi = document.getElementById('name-li');
+    const emailLi = document.getElementById('email-li');
+    const passwordLi = document.getElementById('password-li');
+    const button = document.getElementById('button-li');
+
+    const newUserData = JSON.parse(sessionStorage.getItem('user'));
+    
+    if (status) {
+        alert('now editing');
+        localStorage.setItem('editing', 'true');
+
+        nameLi.classList.remove('profile-notediting-li');
+        emailLi.classList.remove('profile-notediting-li');
+        passwordLi.classList.remove('profile-notediting-li');
+
+        nameLi.innerHTML = `<input type="text" id="name" name="name" required placeholder=${newUserData.name}>`;
+        emailLi.innerHTML = `<input type="text" id="email" name="email" required placeholder=${newUserData.email}>`;
+        passwordLi.innerHTML = `<input type="password" id="password" name="password" minlength="8" maxlength="64" placeholder=${newUserData.password}>`;
+        button.innerText = 'Save';
+    } else {
+        alert('saved');
+        localStorage.setItem('editing', 'false');
+
+        nameLi.classList.add('profile-notediting-li');
+        emailLi.classList.add('profile-notediting-li');
+        passwordLi.classList.add('profile-notediting-li');
+
+        nameLi.innerHTML = `name`;
+        emailLi.innerHTML = `email`;
+        passwordLi.innerHTML = `password`;
+        button.innerText = 'Edit';
+
+        //update user variable in session storage
+    }
 });
 
 const postsform = document.getElementById('mypostsform');
