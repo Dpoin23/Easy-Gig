@@ -1,5 +1,6 @@
 localStorage.setItem('editing', 'false');
 const userData = JSON.parse(sessionStorage.getItem('user'));
+const userId = sessionStorage.getItem('userId');
 const profileBox = document.getElementById('profile-box');
 profileBox.innerHTML = `<form id="edit-profile-form">
                             <ul class="createacc-ul" id="profile-ul">
@@ -35,6 +36,7 @@ editForm.addEventListener('submit', function(event) {
     const button = document.getElementById('button-li');
 
     const newUserData = JSON.parse(sessionStorage.getItem('user'));
+    console.log(newUserData);
     
     if (status) {
         alert('now editing');
@@ -44,24 +46,57 @@ editForm.addEventListener('submit', function(event) {
         emailLi.classList.remove('profile-notediting-li');
         passwordLi.classList.remove('profile-notediting-li');
 
-        nameLi.innerHTML = `<input type="text" id="name" name="name" required placeholder=${newUserData.name}>`;
-        emailLi.innerHTML = `<input type="text" id="email" name="email" required placeholder=${newUserData.email}>`;
-        passwordLi.innerHTML = `<input type="password" id="password" name="password" minlength="8" maxlength="64" placeholder=${newUserData.password}>`;
+        nameLi.innerHTML = `<input type="text" id="name" name="name" required value="${newUserData.name}">`;
+        emailLi.innerHTML = `<input type="text" id="email" name="email" required value="${newUserData.email}">`;
+        passwordLi.innerHTML = `<input type="password" id="password" name="password" minlength="8" maxlength="64" value="${newUserData.password}">`;
         button.innerText = 'Save';
     } else {
-        alert('saved');
         localStorage.setItem('editing', 'false');
+
+        const data = new FormData(this);
+        //update user variable in session storage
+        const newData = {
+            name: data.get('name'),
+            email: data.get('email'),
+            password: data.get('password'),
+            user_id: userId
+        };
+
+        if (newData.name != newUserData.name || newData.email != newUserData.email || newData.password != newUserData.password) {
+            fetch('http://localhost:3000/api/updateuser', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Status: ', response.status);
+                }
+                console.log(response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data inserted successfully: ', data);
+                sessionStorage.setItem('user', JSON.stringify(newData));
+                alert('saved');
+            })
+            .catch(error => {
+                console.error(error);
+            }) 
+        } else {
+            alert('No changes made');
+        }
 
         nameLi.classList.add('profile-notediting-li');
         emailLi.classList.add('profile-notediting-li');
         passwordLi.classList.add('profile-notediting-li');
 
-        nameLi.innerHTML = `name`;
-        emailLi.innerHTML = `email`;
-        passwordLi.innerHTML = `password`;
+        nameLi.innerHTML = `${newData.name}`;
+        emailLi.innerHTML = `${newData.email}`;
+        passwordLi.innerHTML = `${newData.password}`;
         button.innerText = 'Edit';
-
-        //update user variable in session storage
     }
 });
 
@@ -79,15 +114,14 @@ postsform.addEventListener('submit', async function(event) {
         postsbox.innerHTML = '';
         sessionStorage.setItem('mypostsdisplay', 'false');
     } else {
-        const user = sessionStorage.getItem('userId');
-        const posts = await getUserPosts(user);
+        const posts = await getUserPosts();
         updateDisplayButton(myPostsDisplayed);
         displayPosts(posts);
         sessionStorage.setItem('mypostsdisplay', 'true');
     }
 });
 
-async function getUserPosts(userId) {
+async function getUserPosts() {
     try {
         const response = await fetch(`http://localhost:3000/api/getpostsbyuserid?user_id=${userId}`);
 

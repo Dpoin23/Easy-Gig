@@ -193,6 +193,15 @@ app.put('/api/updatecurrentbid/:id', (req, res) => {
     });
 })
 
+app.put('/api/updateuser', (req, res) => {
+    let sql = `UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?`;
+    db.query(sql, [req.body.name, req.body.email, req.body.password, req.body.user_id], (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.json(result);
+    });
+});
+
 // Testing
 app.get('/selectusers', (req, res) => {
     let sql = "SELECT * FROM users";

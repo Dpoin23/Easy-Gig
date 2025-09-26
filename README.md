@@ -1,14 +1,10 @@
 # Easy-Gig project outline
 
 Current goals:
-    - display previous search after placing bid / profile section
+    - profile section, modify account info
 - contact us?
     - write a review
     - include in about section
-- profile section
-    - display my posts
-    - display account info / modify
-    - delete posts
 
 Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 account test1 => name: Test One, email: testone@gmail.com, password: testonedavid
