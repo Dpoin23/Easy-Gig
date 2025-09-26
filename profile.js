@@ -1,3 +1,5 @@
+// delete account?
+
 localStorage.setItem('editing', 'false');
 const userData = JSON.parse(sessionStorage.getItem('user'));
 const userId = sessionStorage.getItem('userId');
@@ -19,8 +21,12 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                     ${userData.password}
                                 </li>
 
-                                <li class="createacc-button-div">
+                                <li class="createacc-button-div profile-buttons">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
+                                </li>
+
+                                <li class="createacc-button-div profile-buttons">
+                                    <button class="createacc-button" id="delete-li" type="button" onclick="deleteAccount()">Delete Account</button>
                                 </li>
                             </ul>
                         </form>`;
@@ -36,7 +42,6 @@ editForm.addEventListener('submit', function(event) {
     const button = document.getElementById('button-li');
 
     const newUserData = JSON.parse(sessionStorage.getItem('user'));
-    console.log(newUserData);
     
     if (status) {
         alert('now editing');
@@ -54,7 +59,6 @@ editForm.addEventListener('submit', function(event) {
         localStorage.setItem('editing', 'false');
 
         const data = new FormData(this);
-        //update user variable in session storage
         const newData = {
             name: data.get('name'),
             email: data.get('email'),
@@ -137,41 +141,44 @@ async function getUserPosts() {
 }
 
 function displayPosts(posts) {
-    const postsbox = document.getElementById('myposts');
+    if (posts.length != 0) {
+        const postsbox = document.getElementById('myposts');
+        posts.forEach(function(post) {
+            const box = document.createElement('div');
 
-    posts.forEach(function(post) {
-        const box = document.createElement('div');
-
-        box.classList.add('display');
-        box.classList.add('myposts');
-        box.innerHTML = `<div class="display-title">${post.title}</div>
-                        <label><strong>Description</strong></label>
-                        <p class="display-description">${post.description}</p>
-                        <div class="display-info">
-                            <div class="display-location">Location: ${post.location}</div>
-                            <div class="display-type">Type of Pay: ${post.type_of_pay}</div>
-                            <div class="display-pay">Pay: $${post.max_pay}</div>
-                        </div>
-                        <div class="display-bid">
-                            <div>Current Bid: $${post.current_bid}</div>
-                            <div>
-                                <form class="bid-form">
-                                    <button class="display-input-button" type="submit">Delete</button>
-                                </form>
+            box.classList.add('display');
+            box.classList.add('myposts');
+            box.innerHTML = `<div class="display-title">${post.title}</div>
+                            <label><strong>Description</strong></label>
+                            <p class="display-description">${post.description}</p>
+                            <div class="display-info">
+                                <div class="display-location">Location: ${post.location}</div>
+                                <div class="display-type">Type of Pay: ${post.type_of_pay}</div>
+                                <div class="display-pay">Pay: $${post.max_pay}</div>
                             </div>
-                        </div>`;
+                            <div class="display-bid">
+                                <div>Current Bid: $${post.current_bid}</div>
+                                <div>
+                                    <form class="bid-form">
+                                        <button class="display-input-button" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </div>`;
 
-        postsbox.append(box);
+            postsbox.append(box);
 
-        const delete_form = box.querySelector('form');
-        delete_form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            alert('deleting post. . .');
-            deletePost(post.id);
-            postsbox.removeChild(box);
+            const delete_form = box.querySelector('form');
+            delete_form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                alert('deleting post. . .');
+                deletePost(post.id);
+                postsbox.removeChild(box);
 
+            });
         });
-    });
+    } else {
+        alert('No posts to display');
+    }
 }
 
 function updateDisplayButton(display) {
@@ -204,4 +211,34 @@ function deletePost(post_id) {
     .catch(err => {
         console.error(err);
     })
+}
+
+function deleteAccount() {
+    alert('deleting account. . .');
+    fetch('http://localhost:3000/api/deleteaccountbyid', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => {
+        if(!response.ok) {
+            console.error('Status: ', response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete successful: ', data);
+        deleteSignout();
+    })
+    .catch(err => {
+        console.error(err);
+    })
+}
+
+function deleteSignout() {
+    sessionStorage.setItem("signedIn", "false");
+    sessionStorage.setItem('mypostsdisplay', 'false');
+    window.location.href = "index.html";
 }
