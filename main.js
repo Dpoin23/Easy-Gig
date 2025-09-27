@@ -83,7 +83,8 @@ async function updateBid(post, bid) {
 }
 
 function couldNotFind(message) {
-    clearSearch();
+    const results = document.getElementById('search-results');
+    results.innerHTML = '';
 
     const response_message_div = document.createElement('div');
     response_message_div.innerText = `${message}`;
@@ -103,7 +104,7 @@ async function searchTitle(search) {
         if (!response.ok) {
             couldNotFind(`Could not find any posts with the title: "${search}"`);
         }
-
+        
         const data = await response.json();
 
         if (data.length == 0) {

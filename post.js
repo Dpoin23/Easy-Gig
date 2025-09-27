@@ -49,14 +49,17 @@ function requireSignIn() {
     const ul = document.getElementById("post-ul");
     const required = document.createElement("li");
 
+    required.id = 'oneSignIn';
     required.innerHTML = "To create a post you must <a href='signin.html' class='Header-obj'>Sign In</a>";
     required.style.fontSize = "16px";
     required.style.textAlign = "center";
     required.style.color = "red";
     required.style.margin = "2%";
 
-    ul.children[10].style.marginTop = "0";
-    ul.insertBefore(required, ul.children[10]);
+    if (ul.children[10].id != 'oneSignIn') {
+        ul.children[10].style.marginTop = "0";
+        ul.insertBefore(required, ul.children[10]);
+    }
 }
 
 function postAdded() {
@@ -69,9 +72,7 @@ function postAdded() {
     added.style.color = "rgb(21, 187, 21)";
     added.style.margin = "2%";
 
-    if (ul.children[10].innerText == "Post Created!") {
-        ul.replaceChild(added, ul.children[10]);
-    } else {
+    if (ul.children[10].innerText != "Post Created!") {
         ul.children[10].style.marginTop = "0";
         ul.insertBefore(added, ul.children[10]);
     }
