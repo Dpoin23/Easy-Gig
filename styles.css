@@ -308,3 +308,18 @@ a.Header-obj:hover {
     border-radius: 5px;
     padding: 5px;
 }
+
+.contact {
+    display: flex;
+    justify-content: center;
+}
+
+.info {
+    list-style-type: none;
+    text-align: center;
+    margin-right: 30px;
+}
+
+.bullet {
+    margin-bottom: 10px
+}
