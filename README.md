@@ -1,12 +1,9 @@
 # Easy-Gig project outline
 
-Current goals:
-    - profile section, modify account info
-- contact us?
-    - write a review
-    - include in about section
+Current goals: n/a
 
-Bypassing nodemon: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Testing info:
+Bypassing nodemon => Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 account test1 => name: Test One, email: testone@gmail.com, password: testonedavid
 account test2 => name: Test Two, email: testtwo@gmail.com, password: testtwodavid
 post test1 => title: Post Test, description: this is a test for adding the post to the db, location: testing, type of pay: one-time, pay: 123
