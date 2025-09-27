@@ -238,7 +238,16 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
         console.log(result);
         res.send(result);
     })
-})
+});
+
+app.delete('/api/deletealluserposts', (req, res) => {
+    let sql = `DELETE FROM posts WHERE user_id = ?`;
+    db.query(sql, req.body.user_id, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.json(result);
+    })
+});
 
 app.get('/deletepost/:id', (req, res) => {
     let sql = `DELETE FROM posts WHERE id = ${req.params.id}`;

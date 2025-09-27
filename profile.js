@@ -231,6 +231,7 @@ function deleteAccount() {
     .then(data => {
         console.log('Delete successful: ', data);
         deleteSignout();
+        deleteUsersPosts(userId);
     })
     .catch(err => {
         console.error(err);
@@ -241,4 +242,26 @@ function deleteSignout() {
     sessionStorage.setItem("signedIn", "false");
     sessionStorage.setItem('mypostsdisplay', 'false');
     window.location.href = "index.html";
+}
+
+function deleteUsersPosts(userId) {
+    fetch('http://localhost:3000/api/deletealluserposts', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Status: ', response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Posts deleted successfully: ', data);
+    })
+    .catch(error => {
+        console.error(error);
+    }) 
 }
