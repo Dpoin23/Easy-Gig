@@ -1,10 +1,19 @@
 *{
     font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    margin: 0px;
-    padding: 0px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
 }
 
 .Header {
@@ -21,7 +30,7 @@ body {
 
 .Header-obj {
     font-size: 19px;
-    padding: 15px;
+    padding: 17px;
     padding-bottom: 18px;
 }
 
@@ -41,6 +50,7 @@ body {
 
 .topline {
     margin-top: 0;
+    border: 1px solid black;
 }
 
 .main {
@@ -339,4 +349,26 @@ body {
 
 .bullet {
     margin-bottom: 10px
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top: 2px solid black;
+}
+
+.footer-header {
+    font-size: 22px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.footer-info {
+    font-size: 16px;
+}
+
+.footer-image {
+    margin-top: 5px;
 }
