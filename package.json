@@ -4,7 +4,8 @@
   "description": "Current goals:\r     - DATABASE!",
   "main": "database.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon database.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +20,10 @@
   "homepage": "https://github.com/Dpoin23/Easy-Gig#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "mysql2": "^3.14.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }

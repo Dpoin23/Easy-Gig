@@ -1,5 +1,5 @@
 *{
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: sans-serif;
 }
 
 body {
@@ -8,27 +8,39 @@ body {
 }
 
 .Header {
-    list-style-type: none;
-    text-align: center;
-    align-items: center;
     display: flex;
     justify-content: center;
-    padding: 10px 0;
+    align-items: center;
+    padding: 0;
     margin: 0;
 }
 
-.Header-links {
-    display: inline-block;
-    margin: 0 20px;
-    font-size: 20px;
+.Header-image {
+    margin-top: 5px;
 }
 
-a.Header-obj {
+.Header-obj {
+    font-size: 19px;
+    padding: 15px;
+    padding-bottom: 18px;
+}
+
+.Header-obj:hover {
+    background-color: black;
+}
+
+.Header-obj a {
+    color: black;
     text-decoration: none;
 }
 
-a.Header-obj:hover {
-    text-decoration: underline;
+.Header-obj:hover a {
+    color: white;
+    text-decoration: none;
+}
+
+.topline {
+    margin-top: 0;
 }
 
 .main {
@@ -54,7 +66,7 @@ a.Header-obj:hover {
 .search-box {
     text-align: center;
     align-items: center;
-    margin: 2% auto;
+    margin: 1% auto;
     height: auto;
     width: 750px;
     border: 0;
@@ -82,6 +94,11 @@ a.Header-obj:hover {
     color: rgb(243, 243, 243);
     height: 30px;
     cursor: pointer;
+}
+
+.search-button {
+    background-color: black;
+    border: none;
 }
 
 .search-bar {
@@ -202,8 +219,8 @@ a.Header-obj:hover {
     height: 30px;
     font-size: 16px;
     border-radius: 60px;
-    background-color: rgb(60, 60, 60);
-    border-color: rgb(60, 60, 60);
+    background-color: black;
+    border-color: black;
     color: rgb(243, 243, 243);
     padding: 3px;
     cursor: pointer;
