@@ -19,7 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Create and alter
+// Create database
 app.get('/createdb', (req, res) => {
     let sql = "CREATE DATABASE easy_gig";
     db.query(sql, (err, result) => {
@@ -29,14 +29,17 @@ app.get('/createdb', (req, res) => {
     })
 });
 
+// Create posts table
 app.get('/createpoststable', (req, res) => {
     let sql = `CREATE TABLE IF NOT EXISTS posts(
         id int AUTO_INCREMENT,
+        user_id INT,
         title VARCHAR(255),
         description VARCHAR(255),
         location VARCHAR(255),
         max_pay DECIMAL(8, 2),
         type_of_pay VARCHAR(255),
+        current_bid DECIMAL(8, 2) DEFAULT 0,
         PRIMARY KEY(id)
         )`;
 
@@ -47,6 +50,7 @@ app.get('/createpoststable', (req, res) => {
     });
 });
 
+// Create users table
 app.get('/createuserstable', (req, res) => {
     let sql = `CREATE TABLE IF NOT EXISTS users(
         id int AUTO_INCREMENT,
@@ -63,6 +67,8 @@ app.get('/createuserstable', (req, res) => {
     });
 });
 
+
+/* Table Modifications
 app.get('/adduseridtoposts', (req, res) => {
     let sql = 'ALTER TABLE posts ADD COLUMN user_id INT';
     db.query(sql, (err, result) => {
@@ -89,6 +95,7 @@ app.get('/adddecimaltobid', (req, res) => {
         res.send('bid type updated, now includes decimals, max 8 digits with two decimal places.');
     });
 });
+*/
 
 // Insert
 app.post('/api/adduser', (req, res) => {

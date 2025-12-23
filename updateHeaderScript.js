@@ -13,16 +13,16 @@ function updateHeader(signedIn) {
 
     if (signedIn) {
                 
-        const signout = document.createElement("li");
-        const profile = document.createElement("li");
+        const signout = document.createElement("div");
+        const profile = document.createElement("div");
         const signin = document.getElementById("signin-link");
 
-        signout.innerHTML = "<a href='signout.html' class='Header-obj'>Sign Out</a>";
-        signout.classList.add("Header-links");
+        signout.innerHTML = "<a href='signout.html'>Sign Out</a>";
+        signout.classList.add("Header-obj");
         signout.id = "signout-link";
 
-        profile.innerHTML = "<a href='profile.html' class='Header-obj'>Profile</a>";
-        profile.classList.add("Header-links");
+        profile.innerHTML = "<a href='profile.html'>Profile</a>";
+        profile.classList.add("Header-obj");
         profile.id = "profile-link";
 
         header.appendChild(profile);
@@ -31,10 +31,10 @@ function updateHeader(signedIn) {
 
     } else if (!signedIn && document.getElementById("signout-link") && document.getElementById("profile-link")) {
 
-        const signin = document.createElement("li");
+        const signin = document.createElement("div");
 
-        signin.innerHTML = "<a href='signin.html' class='Header-obj'>Sign In</a>";
-        signin.classList.add("Header-links");
+        signin.innerHTML = "<a href='signin.html'>Sign In</a>";
+        signin.classList.add("Header-obj");
         signin.id = "signin-link";
 
         header.removeChild(document.getElementById("signout-link"));
