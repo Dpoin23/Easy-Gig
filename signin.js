@@ -34,7 +34,15 @@ function confirmPassword(em, pw) {
     .then(data => {
 
         if (!data.success) return false;
+
+        const user = {
+            id: data.userId,
+            name: data.name,
+            email: em
+        };
+
         sessionStorage.setItem("userId", data.userId);
+        sessionStorage.setItem("user", JSON.stringify(user));
         return true;
 
     })

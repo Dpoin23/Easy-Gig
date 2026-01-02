@@ -1,8 +1,6 @@
-// delete account?
-
 localStorage.setItem('editing', 'false');
-const userData = JSON.parse(sessionStorage.getItem('user'));
 const userId = sessionStorage.getItem('userId');
+const userData = JSON.parse(sessionStorage.getItem("user"));
 const profileBox = document.getElementById('profile-box');
 profileBox.innerHTML = `<form id="edit-profile-form">
                             <ul class="createacc-ul" id="profile-ul">
