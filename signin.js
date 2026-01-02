@@ -17,7 +17,11 @@ async function checkUser(email, password) {
 }
 
 function confirmPassword(em, pw) {
-    return fetch(`http://localhost:3000/api/getuser?email=${em}`)
+    return fetch('http://localhost:3000/api/signin', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({em, pw})
+    })
     .then(response => {
 
         if (!response.ok) {
@@ -27,12 +31,11 @@ function confirmPassword(em, pw) {
         return response.json();
 
     })
-    .then(user => {
+    .then(data => {
 
-        const data = user[0];
-        sessionStorage.setItem('userId', data.id);
-        sessionStorage.setItem('user', JSON.stringify(data));
-        return data.password == pw;
+        if (!data.success) return false;
+        sessionStorage.setItem("userId", data.userId);
+        return true;
 
     })
     .catch(error => {

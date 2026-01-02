@@ -22,7 +22,7 @@ function createAccount(name, email, password, confirm) {
 }
 
 function updateDB(nm, em, pw) {
-    const data = {
+   const data = {
         name: nm,
         email: em,
         password: pw

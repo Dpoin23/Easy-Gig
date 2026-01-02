@@ -11,5 +11,12 @@ function testHashing(password) {
 
 };
 
-testHashing("passington");
-testHashing("Antoehr4195u34959");
+function testSaltAndHash(password) {
+    console.log("Testing password: ", password);
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    console.log("Salt: ", salt);
+
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    console.log("Hash: ", hash);
+}

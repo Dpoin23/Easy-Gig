@@ -1,6 +1,7 @@
 const mysql = require('mysql2');
 const express = require('express');
 const cors = require('cors');
+const crypto = require('node:crypto');
 
 // Connect
 var db = mysql.createConnection({
@@ -67,8 +68,16 @@ app.get('/createuserstable', (req, res) => {
     });
 });
 
-
 /* Table Modifications
+app.get('/addSaltToUsers', (req, res) => {
+    let sql = 'ALTER TABLE users ADD COLUMN salt VARCHAR(255)';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.send("salt column added to user table");
+    });
+});
+
 app.get('/adduseridtoposts', (req, res) => {
     let sql = 'ALTER TABLE posts ADD COLUMN user_id INT';
     db.query(sql, (err, result) => {
@@ -99,10 +108,14 @@ app.get('/adddecimaltobid', (req, res) => {
 
 // Insert
 app.post('/api/adduser', (req, res) => {
+    const st = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(req.body.password, st, 64).toString('hex');
+
     let account = {
         name: req.body.name,
         email: req.body.email,
-        password: req.body.password
+        password: hash,
+        salt: st
     };
 
     let sql = "INSERT INTO users SET ?";
@@ -132,6 +145,31 @@ app.post('/api/addpost', (req, res) => {
 })
 
 // Select
+app.post('/api/signin', (req, res) => {
+    let sql = `SELECT id, salt, password FROM users WHERE email = ?`;
+    db.query(sql, [req.body.em], (err, result) => {
+        if (err) throw err;
+        if (!result || result.length == 0) {
+            res.json({ error: "Invalid Credentials" });
+        }
+
+        const user = result[0];
+        const salt = user.salt;
+        const derivedpw = crypto.scryptSync(req.body.pw, salt, 64);
+
+        const match = crypto.timingSafeEqual(Buffer.from(user.password, 'hex'), derivedpw);
+
+        if (!match) {
+            res.json({ error: "Invalid credentials" });
+        }
+
+        res.json({
+            success: true,
+            userId: user.id
+        });
+    });
+})
+
 app.get('/api/getuser', (req, res) => {
     let sql = `SELECT * FROM users WHERE email = ?`;
     db.query(sql, [req.query.email], (err, result) => {
