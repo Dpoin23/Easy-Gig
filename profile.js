@@ -148,14 +148,13 @@ postsform.addEventListener('submit', async function(event) {
     const myPostsDisplayed = sessionStorage.getItem('mypostsdisplay') === 'true';
 
     if (myPostsDisplayed) {
-        updateDisplayButton(myPostsDisplayed);
+        updateDisplayButton();
         const postsbox = document.getElementById('myposts');
         postsbox.innerHTML = '';
         sessionStorage.setItem('mypostsdisplay', 'false');
     } else {
         const posts = await getUserPosts();
-        sessionStorage.setItem('mypostsdisplay', 'true');
-        displayPosts(posts, myPostsDisplayed);
+        displayPosts(posts);
     }
 });
 
@@ -174,7 +173,7 @@ async function getUserPosts() {
     }
 }
 
-function displayPosts(posts, myPostsDisplayed) {
+function displayPosts(posts) {
     if (posts.length != 0) {
         const postsbox = document.getElementById('myposts');
         posts.forEach(function(post) {
@@ -210,14 +209,16 @@ function displayPosts(posts, myPostsDisplayed) {
 
             });
         });
-        updateDisplayButton(myPostsDisplayed);
+        updateDisplayButton();
+        sessionStorage.setItem("mypostsdisplay", "true");
     } else {
         alert('No posts to display');
         sessionStorage.setItem('mypostsdisplay', 'false');
     }
 }
 
-function updateDisplayButton(display) {
+function updateDisplayButton() {
+    const display = sessionStorage.getItem("mypostsdisplay") === 'true';
     if (display) {
         const button = document.getElementById('mypostsbutton');
         button.innerText = 'Show My Posts'; 
@@ -227,7 +228,7 @@ function updateDisplayButton(display) {
     }
 }
 
-function deletePost(post_id) {
+async function deletePost(post_id) {
     fetch('http://localhost:3000/api/deletepostbyid', {
         method: 'DELETE',
         headers: {
@@ -247,6 +248,12 @@ function deletePost(post_id) {
     .catch(err => {
         console.error(err);
     })
+
+    const posts = await getUserPosts();
+    if (posts.length == 0) {
+        updateDisplayButton();
+        sessionStorage.setItem("mypostsdisplay", "false");
+    }
 }
 
 function deleteUsersPosts(userId) {
