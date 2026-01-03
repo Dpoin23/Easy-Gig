@@ -5,6 +5,7 @@ Current goals:
  - Profile Box: update profile, user cannot view password in profile, only username and email, maintain edit button for those two
     - add another button for changing password
     - never store password
+ - Style changes throughout the website (mainly buttons)
 
 Bug Fixes:
  - display posts button do further testing, seems to be bug when there are no posts, still switches inner HTML
