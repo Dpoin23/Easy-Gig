@@ -1,3 +1,6 @@
+/*
+Profile Box Section
+*/
 localStorage.setItem('editing', 'false');
 const userId = sessionStorage.getItem('userId');
 const userData = JSON.parse(sessionStorage.getItem("user"));
@@ -102,6 +105,40 @@ editForm.addEventListener('submit', function(event) {
     }
 });
 
+function deleteAccount() {
+    alert('deleting account. . .');
+    fetch('http://localhost:3000/api/deleteaccountbyid', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => {
+        if(!response.ok) {
+            console.error('Status: ', response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete successful: ', data);
+        deleteSignout();
+        deleteUsersPosts(userId);
+    })
+    .catch(err => {
+        console.error(err);
+    })
+}
+
+function deleteSignout() {
+    sessionStorage.setItem("signedIn", "false");
+    sessionStorage.setItem('mypostsdisplay', 'false');
+    window.location.href = "index.html";
+}
+
+/*
+User Posts Section
+*/
 const postsform = document.getElementById('mypostsform');
 sessionStorage.setItem('mypostsdisplay', 'false');
 document.getElementById('myposts').innerHTML = '';
@@ -117,8 +154,8 @@ postsform.addEventListener('submit', async function(event) {
         sessionStorage.setItem('mypostsdisplay', 'false');
     } else {
         const posts = await getUserPosts();
-        displayPosts(posts, myPostsDisplayed);
         sessionStorage.setItem('mypostsdisplay', 'true');
+        displayPosts(posts, myPostsDisplayed);
     }
 });
 
@@ -176,6 +213,7 @@ function displayPosts(posts, myPostsDisplayed) {
         updateDisplayButton(myPostsDisplayed);
     } else {
         alert('No posts to display');
+        sessionStorage.setItem('mypostsdisplay', 'false');
     }
 }
 
@@ -209,37 +247,6 @@ function deletePost(post_id) {
     .catch(err => {
         console.error(err);
     })
-}
-
-function deleteAccount() {
-    alert('deleting account. . .');
-    fetch('http://localhost:3000/api/deleteaccountbyid', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(response => {
-        if(!response.ok) {
-            console.error('Status: ', response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Delete successful: ', data);
-        deleteSignout();
-        deleteUsersPosts(userId);
-    })
-    .catch(err => {
-        console.error(err);
-    })
-}
-
-function deleteSignout() {
-    sessionStorage.setItem("signedIn", "false");
-    sessionStorage.setItem('mypostsdisplay', 'false');
-    window.location.href = "index.html";
 }
 
 function deleteUsersPosts(userId) {

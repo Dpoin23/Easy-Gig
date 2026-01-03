@@ -8,5 +8,5 @@ Current goals:
  - Style changes throughout the website (mainly buttons)
 
 Bug Fixes:
- - display posts button do further testing, seems to be bug when there are no posts, still switches inner HTML
+ - display posts button do further testing, when user deletes the final post add a function to check if there are any posts remaining, if the user has no posts remaining, automatically change the display posts button back to show posts.
  - when trying to sign in two times, error sign displays stack (should replace each other)
