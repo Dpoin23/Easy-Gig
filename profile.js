@@ -117,8 +117,7 @@ postsform.addEventListener('submit', async function(event) {
         sessionStorage.setItem('mypostsdisplay', 'false');
     } else {
         const posts = await getUserPosts();
-        updateDisplayButton(myPostsDisplayed);
-        displayPosts(posts);
+        displayPosts(posts, myPostsDisplayed);
         sessionStorage.setItem('mypostsdisplay', 'true');
     }
 });
@@ -138,7 +137,7 @@ async function getUserPosts() {
     }
 }
 
-function displayPosts(posts) {
+function displayPosts(posts, myPostsDisplayed) {
     if (posts.length != 0) {
         const postsbox = document.getElementById('myposts');
         posts.forEach(function(post) {
@@ -174,6 +173,7 @@ function displayPosts(posts) {
 
             });
         });
+        updateDisplayButton(myPostsDisplayed);
     } else {
         alert('No posts to display');
     }
