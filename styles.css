@@ -327,7 +327,7 @@ main {
 }
 
 .profile-box {
-    height: 420px;
+    height: auto;
 }
 
 .profile-notediting-li {

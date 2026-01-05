@@ -10,3 +10,4 @@ Current goals:
 Bug Fixes:
  - display posts button do further testing, when user deletes the final post add a function to check if there are any posts remaining, if the user has no posts remaining, automatically change the display posts button back to show posts.
  - when trying to sign in two times, error sign displays stack (should replace each other)
+ - cannot signin/create acc, bug when one of the users got modified

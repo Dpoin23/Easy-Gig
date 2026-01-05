@@ -17,17 +17,8 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                     ${userData.email}
                                 </li>
 
-                                <li class="createacc-li"><strong>Password</strong></li>
-                                <li class="createacc-li profile-notediting-li" id="password-li">
-                                    ${userData.password}
-                                </li>
-
                                 <li class="createacc-button-div profile-buttons">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
-                                </li>
-
-                                <li class="createacc-button-div profile-buttons">
-                                    <button class="createacc-button" id="delete-li" type="button" onclick="deleteAccount()">Delete Account</button>
                                 </li>
                             </ul>
                         </form>`;
@@ -39,8 +30,8 @@ editForm.addEventListener('submit', function(event) {
     const status = localStorage.getItem('editing') === 'false';
     const nameLi = document.getElementById('name-li');
     const emailLi = document.getElementById('email-li');
-    const passwordLi = document.getElementById('password-li');
     const button = document.getElementById('button-li');
+    const ul = document.getElementById("profile-ul");
 
     const newUserData = JSON.parse(sessionStorage.getItem('user'));
     
@@ -48,13 +39,18 @@ editForm.addEventListener('submit', function(event) {
         alert('now editing');
         localStorage.setItem('editing', 'true');
 
+        const deleteButton = document.createElement("li");
+        deleteButton.classList.add("createacc-button-div");
+        deleteButton.classList.add("profile-buttons");
+        deleteButton.id = "profile-delete-button";
+        deleteButton.innerHTML = '<button class="createacc-button" id="delete-li" type="button" onclick="deleteAccount()">Delete Account</button>';
+        ul.appendChild(deleteButton);
+
         nameLi.classList.remove('profile-notediting-li');
         emailLi.classList.remove('profile-notediting-li');
-        passwordLi.classList.remove('profile-notediting-li');
 
         nameLi.innerHTML = `<input type="text" id="name" name="name" required value="${newUserData.name}">`;
         emailLi.innerHTML = `<input type="text" id="email" name="email" required value="${newUserData.email}">`;
-        passwordLi.innerHTML = `<input type="password" id="password" name="password" minlength="8" maxlength="64" value="${newUserData.password}">`;
         button.innerText = 'Save';
     } else {
         localStorage.setItem('editing', 'false');
@@ -63,11 +59,10 @@ editForm.addEventListener('submit', function(event) {
         const newData = {
             name: data.get('name'),
             email: data.get('email'),
-            password: data.get('password'),
             user_id: userId
         };
 
-        if (newData.name != newUserData.name || newData.email != newUserData.email || newData.password != newUserData.password) {
+        if (newData.name != newUserData.name || newData.email != newUserData.email) {
             fetch('http://localhost:3000/api/updateuser', {
                 method: 'PUT',
                 headers: {
@@ -96,11 +91,11 @@ editForm.addEventListener('submit', function(event) {
 
         nameLi.classList.add('profile-notediting-li');
         emailLi.classList.add('profile-notediting-li');
-        passwordLi.classList.add('profile-notediting-li');
+
+        ul.removeChild(document.getElementById("profile-delete-button"));
 
         nameLi.innerHTML = `${newData.name}`;
         emailLi.innerHTML = `${newData.email}`;
-        passwordLi.innerHTML = `${newData.password}`;
         button.innerText = 'Edit';
     }
 });
