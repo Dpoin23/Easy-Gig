@@ -44,6 +44,14 @@ editForm.addEventListener('submit', function(event) {
         deleteButton.classList.add("profile-buttons");
         deleteButton.id = "profile-delete-button";
         deleteButton.innerHTML = '<button class="createacc-button" id="delete-li" type="button" onclick="deleteAccount()">Delete Account</button>';
+
+        const editpassword = document.createElement("li");
+        editpassword.classList.add("createacc-button-div");
+        editpassword.classList.add("profile-buttons");
+        editpassword.id = "profile-changepw";
+        editpassword.innerHTML = '<button class="createacc-button" id="change-password" type="button" onclick="editPassword()">Change Password</button>';
+
+        ul.appendChild(editpassword);
         ul.appendChild(deleteButton);
 
         nameLi.classList.remove('profile-notediting-li');
@@ -93,6 +101,7 @@ editForm.addEventListener('submit', function(event) {
         emailLi.classList.add('profile-notediting-li');
 
         ul.removeChild(document.getElementById("profile-delete-button"));
+        ul.removeChild(document.getElementById("profile-changepw"));
 
         nameLi.innerHTML = `${newData.name}`;
         emailLi.innerHTML = `${newData.email}`;
@@ -129,6 +138,10 @@ function deleteSignout() {
     sessionStorage.setItem("signedIn", "false");
     sessionStorage.setItem('mypostsdisplay', 'false');
     window.location.href = "index.html";
+}
+
+function editPassword() {
+    alert("editing password");
 }
 
 /*
