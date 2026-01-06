@@ -20,6 +20,10 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                 <li class="createacc-button-div profile-buttons">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
                                 </li>
+
+                                <li class="createacc-button-div profile-buttons">
+                                    <button class="createacc-button" type="submit" id="profile-changepw" onclick="editPassword()">Change Password</button>
+                                </li>
                             </ul>
                         </form>`;
 
@@ -45,13 +49,7 @@ editForm.addEventListener('submit', function(event) {
         deleteButton.id = "profile-delete-button";
         deleteButton.innerHTML = '<button class="createacc-button" id="delete-li" type="button" onclick="deleteAccount()">Delete Account</button>';
 
-        const editpassword = document.createElement("li");
-        editpassword.classList.add("createacc-button-div");
-        editpassword.classList.add("profile-buttons");
-        editpassword.id = "profile-changepw";
-        editpassword.innerHTML = '<button class="createacc-button" id="change-password" type="button" onclick="editPassword()">Change Password</button>';
-
-        ul.appendChild(editpassword);
+        ul.removeChild(document.getElementById("profile-changepw"));
         ul.appendChild(deleteButton);
 
         nameLi.classList.remove('profile-notediting-li');
@@ -99,9 +97,15 @@ editForm.addEventListener('submit', function(event) {
 
         nameLi.classList.add('profile-notediting-li');
         emailLi.classList.add('profile-notediting-li');
+        
+        const editpassword = document.createElement("li");
+        editpassword.classList.add("createacc-button-div");
+        editpassword.classList.add("profile-buttons");
+        editpassword.id = "profile-changepw";
+        editpassword.innerHTML = '<button class="createacc-button" id="change-password" type="button" onclick="editPassword()">Change Password</button>';
 
         ul.removeChild(document.getElementById("profile-delete-button"));
-        ul.removeChild(document.getElementById("profile-changepw"));
+        ul.appendChild(editpassword);
 
         nameLi.innerHTML = `${newData.name}`;
         emailLi.innerHTML = `${newData.email}`;
@@ -141,12 +145,13 @@ function deleteSignout() {
 }
 
 function editPassword() {
-    alert("editing password");
+    window.location.href = "changePassword.html";
 }
 
 /*
 User Posts Section
 */
+
 const postsform = document.getElementById('mypostsform');
 sessionStorage.setItem('mypostsdisplay', 'false');
 document.getElementById('myposts').innerHTML = '';
