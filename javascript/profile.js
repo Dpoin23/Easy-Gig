@@ -32,14 +32,14 @@ editForm.addEventListener('submit', function(event) {
     event.preventDefault();
 
     const status = localStorage.getItem('editing') === 'false';
+    const changingPw = localStorage.getItem("PW") === "true";
     const nameLi = document.getElementById('name-li');
     const emailLi = document.getElementById('email-li');
     const button = document.getElementById('button-li');
     const ul = document.getElementById("profile-ul");
-
     const newUserData = JSON.parse(sessionStorage.getItem('user'));
     
-    if (status) {
+    if (status && !changingPw) {
         alert('now editing');
         localStorage.setItem('editing', 'true');
 
@@ -58,7 +58,7 @@ editForm.addEventListener('submit', function(event) {
         nameLi.innerHTML = `<input type="text" id="name" name="name" required value="${newUserData.name}">`;
         emailLi.innerHTML = `<input type="text" id="email" name="email" required value="${newUserData.email}">`;
         button.innerText = 'Save';
-    } else {
+    } else if (!status && !changingPw) {
         localStorage.setItem('editing', 'false');
 
         const data = new FormData(this);
@@ -145,6 +145,7 @@ function deleteSignout() {
 }
 
 function editPassword() {
+    localStorage.setItem("PW", "true");
     window.location.href = "changePassword.html";
 }
 
