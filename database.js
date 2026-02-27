@@ -262,7 +262,7 @@ app.get('/selectusers', (req, res) => {
     db.query(sql, (err, result) => {
         if (err) throw err;
         console.log(result);
-        res.send("testone fetched");
+        res.send("users fetched");
     });
 });
 
@@ -275,7 +275,15 @@ app.get('/selectposts', (req, res) => {
     })
 });
 
-// Delete 
+// Delete
+app.delete('/deleteallusers', (req, res) => {
+    let sql = 'DELETE FROM users';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+    })
+});
+
 app.delete('/api/deletepostbyid', (req, res) => {
     let sql = 'DELETE FROM posts WHERE id = ?';
     db.query(sql, req.body.postId, (err, result) => {

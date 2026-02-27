@@ -2,6 +2,7 @@
 Profile Box Section
 */
 localStorage.setItem('editing', 'false');
+localStorage.setItem('PW', 'false');
 const userId = sessionStorage.getItem('userId');
 const userData = JSON.parse(sessionStorage.getItem("user"));
 const profileBox = document.getElementById('profile-box');
@@ -21,8 +22,8 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
                                 </li>
 
-                                <li class="createacc-button-div profile-buttons">
-                                    <button class="createacc-button" type="submit" id="profile-changepw" onclick="editPassword()">Change Password</button>
+                                <li class="createacc-button-div profile-buttons" id="profile-changepw">
+                                    <button class="createacc-button" type="submit" onclick="editPassword()">Change Password</button>
                                 </li>
                             </ul>
                         </form>`;
