@@ -151,23 +151,24 @@ app.post('/api/signin', (req, res) => {
         if (err) throw err;
         if (!result || result.length == 0) {
             res.json({ error: "Invalid Credentials" });
+        } else {
+            const user = result[0];
+            const salt = user.salt;
+            const derivedpw = crypto.scryptSync(req.body.pw, salt, 64);
+
+            const match = crypto.timingSafeEqual(Buffer.from(user.password, 'hex'), derivedpw);
+
+            if (!match) {
+                res.json({ error: "Invalid credentials" });
+            } else {
+                res.json({
+                    success: true,
+                    name: user.name,
+                    userId: user.id,
+                    salt: user.salt
+                });
+            }
         }
-
-        const user = result[0];
-        const salt = user.salt;
-        const derivedpw = crypto.scryptSync(req.body.pw, salt, 64);
-
-        const match = crypto.timingSafeEqual(Buffer.from(user.password, 'hex'), derivedpw);
-
-        if (!match) {
-            res.json({ error: "Invalid credentials" });
-        }
-
-        res.json({
-            success: true,
-            name: user.name,
-            userId: user.id
-        });
     });
 })
 
@@ -245,13 +246,24 @@ app.put('/api/updatecurrentbid/:id', (req, res) => {
         console.log(result);
         res.json(result);
     });
-})
+});
 
 app.put('/api/updateuser', (req, res) => {
     let sql = `UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?`;
     db.query(sql, [req.body.name, req.body.email, req.body.password, req.body.user_id], (err, result) => {
         if (err) throw err;
-        console.log(result);
+        res.json(result);
+    });
+});
+
+app.put('/api/updatePassword', (req, res) => {
+    const st = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(req.body.newPassword, st, 64).toString('hex');
+
+    let sql = 'UPDATE users SET password = ?, salt = ? WHERE id = ?';
+    db.query(sql, [hash, st, req.body.userId], (err, result) => {
+        if (err) throw err;
+        console.log(result)
         res.json(result);
     });
 });
