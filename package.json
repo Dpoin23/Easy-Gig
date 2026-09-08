@@ -4,8 +4,11 @@
   "description": "Current goals:\r     - DATABASE!",
   "main": "database.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon database.js"
+    "dev": "nodemon database.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "syntax": "node --check database.js && node --check testing/password.test.js && node --check testing/testingNewFeatures.js && node --check javascript/main.js && node --check javascript/create.js && node --check javascript/signin.js && node --check javascript/post.js && node --check javascript/profile.js && node --check javascript/newPassword.js && node --check javascript/updateHeaderScript.js",
+    "test": "node --test testing/"
   },
   "repository": {
     "type": "git",
@@ -18,12 +21,18 @@
     "url": "https://github.com/Dpoin23/Easy-Gig/issues"
   },
   "homepage": "https://github.com/Dpoin23/Easy-Gig#readme",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "mysql2": "^3.14.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
     "nodemon": "^3.1.11"
   }
 }

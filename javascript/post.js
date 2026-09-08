@@ -16,7 +16,7 @@ form.addEventListener("submit", function(e) {
 
 function addPostToDB(ti, dsp, loc, pT, p) {
     const uID = sessionStorage.getItem('userId');
-    data = {
+    const data = {
         title: ti,
         description: dsp,
         location: loc,

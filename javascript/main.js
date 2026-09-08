@@ -47,7 +47,7 @@ function display(data) {
         display_form.addEventListener('submit', function(b) {
             b.preventDefault();
             const event_data = new FormData(this);
-            bid = parseFloat(event_data.get('bid'));
+            const bid = parseFloat(event_data.get('bid'));
 
             if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
                 updateBid(point, bid);

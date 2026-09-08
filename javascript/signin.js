@@ -1,3 +1,4 @@
+/* global signin */
 const form = document.getElementById("signin-form");
 
 form.addEventListener("submit", function(e) {

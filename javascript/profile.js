@@ -114,6 +114,7 @@ editForm.addEventListener('submit', function(event) {
     }
 });
 
+/* exported deleteAccount, editPassword */
 function deleteAccount() {
     alert('deleting account. . .');
     fetch('http://localhost:3000/api/deleteaccountbyid', {

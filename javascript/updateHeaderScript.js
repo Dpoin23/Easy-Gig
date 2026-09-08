@@ -1,3 +1,4 @@
+/* exported signin, signout */
 function signin() {
     sessionStorage.setItem("signedIn", "true");
     sessionStorage.setItem('mypostsdisplay', 'false');
