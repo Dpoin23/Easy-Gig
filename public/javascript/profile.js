@@ -70,7 +70,7 @@ editForm.addEventListener('submit', function(event) {
         };
 
         if (newData.name != newUserData.name || newData.email != newUserData.email) {
-            fetch('http://localhost:3000/api/updateuser', {
+            fetch('/api/updateuser', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -117,7 +117,7 @@ editForm.addEventListener('submit', function(event) {
 /* exported deleteAccount, editPassword */
 function deleteAccount() {
     alert('deleting account. . .');
-    fetch('http://localhost:3000/api/deleteaccountbyid', {
+    fetch('/api/deleteaccountbyid', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -176,7 +176,7 @@ postsform.addEventListener('submit', async function(event) {
 
 async function getUserPosts() {
     try {
-        const response = await fetch(`http://localhost:3000/api/getpostsbyuserid?user_id=${userId}`);
+        const response = await fetch(`/api/getpostsbyuserid?user_id=${userId}`);
 
         if (!response.ok) {
             console.error(response.status);
@@ -245,7 +245,7 @@ function updateDisplayButton() {
 }
 
 async function deletePost(post_id) {
-    fetch('http://localhost:3000/api/deletepostbyid', {
+    fetch('/api/deletepostbyid', {
         method: 'DELETE',
         headers: {
             'Content-type': 'application/json'
@@ -273,7 +273,7 @@ async function deletePost(post_id) {
 }
 
 function deleteUsersPosts(userId) {
-    fetch('http://localhost:3000/api/deletealluserposts', {
+    fetch('/api/deletealluserposts', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'

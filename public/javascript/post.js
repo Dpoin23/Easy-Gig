@@ -25,7 +25,7 @@ function addPostToDB(ti, dsp, loc, pT, p) {
         user_id: uID
     };
 
-    fetch('http://localhost:3000/api/addpost', {
+    fetch('/api/addpost', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

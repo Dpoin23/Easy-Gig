@@ -2,13 +2,14 @@
   "name": "easy-gig",
   "version": "1.0.0",
   "description": "Current goals:\r     - DATABASE!",
-  "main": "database.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon database.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "syntax": "node --check database.js && node --check testing/password.test.js && node --check testing/testingNewFeatures.js && node --check javascript/main.js && node --check javascript/create.js && node --check javascript/signin.js && node --check javascript/post.js && node --check javascript/profile.js && node --check javascript/newPassword.js && node --check javascript/updateHeaderScript.js",
-    "test": "node --test testing/"
+    "syntax": "node --check server.js && node --check test/password.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js",
+    "test": "node --test test/"
   },
   "repository": {
     "type": "git",

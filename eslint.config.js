@@ -3,11 +3,11 @@ const js = require('@eslint/js');
 
 module.exports = [
   {
-    ignores: ['node_modules/**', 'images/**', 'eslint.config.js'],
+    ignores: ['node_modules/**', 'public/images/**', 'eslint.config.js'],
   },
   js.configs.recommended,
   {
-    files: ['database.js', 'testing/**/*.js'],
+    files: ['server.js', 'test/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -27,7 +27,7 @@ module.exports = [
     },
   },
   {
-    files: ['javascript/**/*.js'],
+    files: ['public/javascript/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',

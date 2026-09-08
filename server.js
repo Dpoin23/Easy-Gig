@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('node:crypto');
 
+let dbReady = false;
+
 // Connect
 var db = mysql.createConnection({
    host: 'localhost',
@@ -12,13 +14,26 @@ var db = mysql.createConnection({
 });
 
 db.connect((err) => {
-    if(err) throw err;
-    console.log("mysql connected to easy_gig");
+    if (err) {
+        console.error('MySQL connection failed:', err.message);
+        console.error('Static files will still be served; API routes need MySQL.');
+        return;
+    }
+    dbReady = true;
+    console.log('mysql connected to easy_gig');
 });
 
 const app = express(); 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
+
+app.use('/api', (req, res, next) => {
+    if (!dbReady) {
+        return res.status(503).json({ error: 'Database unavailable' });
+    }
+    next();
+});
 
 // Create database
 app.get('/createdb', (req, res) => {
@@ -342,6 +357,7 @@ app.get('/deletespecificpostfortesting', (req, res) => {
 });
 
 // Listen
-app.listen('3000', () => {
-    console.log("Server started on port 3000");
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
 });

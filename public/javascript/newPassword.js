@@ -24,7 +24,7 @@ function handleMismatch() {
 
 async function updatePassword(newPW, uId) {
     try {
-        const response = await fetch("http://localhost:3000/api/updatePassword", {
+        const response = await fetch("/api/updatePassword", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

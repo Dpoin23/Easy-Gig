@@ -1,4 +1,5 @@
 Running database: npm run dev
+App URL: http://localhost:3000
 Bypassing Nodemon if Needed: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 Testing Accounts:

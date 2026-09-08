@@ -60,7 +60,7 @@ function display(data) {
 
 async function updateBid(post, bid) {
     try {
-        const response = await fetch(`http://localhost:3000/api/updatecurrentbid/${post.id}`, {
+        const response = await fetch(`/api/updatecurrentbid/${post.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -99,7 +99,7 @@ function couldNotFind(message) {
 
 async function searchTitle(search) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getpostsbytitle?search=${search}`);
+        const response = await fetch(`/api/getpostsbytitle?search=${search}`);
 
         if (!response.ok) {
             couldNotFind(`Could not find any posts with the title: "${search}"`);
@@ -119,7 +119,7 @@ async function searchTitle(search) {
 
 async function searchLocation(search) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getpostsbylocation?search=${search}`);
+        const response = await fetch(`/api/getpostsbylocation?search=${search}`);
 
         if (!response.ok) {
             couldNotFind(`Could not find any posts with the location: "${search}`);
@@ -139,7 +139,7 @@ async function searchLocation(search) {
 
 async function searchType(search) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getpostsbytype?search=${search}`);
+        const response = await fetch(`/api/getpostsbytype?search=${search}`);
 
         if (!response.ok) {
             couldNotFind(`Could not find any posts with type of pay: "${search}`);
@@ -159,7 +159,7 @@ async function searchType(search) {
 
 async function searchPay(search) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getpostsbypay?search=${search}`);
+        const response = await fetch(`/api/getpostsbypay?search=${search}`);
 
         if (!response.ok) {
             couldNotFind(`Could not find any posts with type of pay: "${search}`);

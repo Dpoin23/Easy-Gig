@@ -18,7 +18,7 @@ async function checkUser(email, password) {
 }
 
 function confirmPassword(em, pw) {
-    return fetch('http://localhost:3000/api/signin', {
+    return fetch('/api/signin', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({em, pw})
