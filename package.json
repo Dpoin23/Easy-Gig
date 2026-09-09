@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "syntax": "node --check server.js && node --check test/password.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js",
-    "test": "node --test test/"
+    "test": "node --test test/*.js"
   },
   "repository": {
     "type": "git",
