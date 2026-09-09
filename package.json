@@ -8,8 +8,9 @@
     "dev": "nodemon server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "syntax": "node --check server.js && node --check test/password.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js",
-    "test": "node --test test/*.js"
+    "syntax": "node --check server.js && node --check test/password.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js && node --check scripts/smoke.js",
+    "test": "node --test test/*.js",
+    "smoke": "node scripts/smoke.js"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "mysql2": "^3.24.3"
   },
   "devDependencies": {

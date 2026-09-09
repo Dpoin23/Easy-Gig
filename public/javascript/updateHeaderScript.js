@@ -30,7 +30,7 @@ function updateHeader(signedIn) {
         header.appendChild(signout);
         header.removeChild(signin);
 
-    } else if (!signedIn && document.getElementById("signout-link") && document.getElementById("profile-link")) {
+    } else if (document.getElementById("signout-link") && document.getElementById("profile-link")) {
 
         const signin = document.createElement("div");
 

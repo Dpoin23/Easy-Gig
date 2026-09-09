@@ -2,6 +2,7 @@ const mysql = require('mysql2');
 const express = require('express');
 const cors = require('cors');
 const crypto = require('node:crypto');
+const { rateLimit } = require('express-rate-limit');
 
 let dbReady = false;
 
@@ -23,10 +24,19 @@ db.connect((err) => {
     console.log('mysql connected to easy_gig');
 });
 
-const app = express(); 
+const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Throttle expensive DB-backed routes (CodeQL js/missing-rate-limiting)
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use(apiLimiter);
 
 app.use('/api', (req, res, next) => {
     if (!dbReady) {
@@ -246,8 +256,8 @@ app.get('/api/getpostsbyuserid', (req, res) => {
 // Update 
 app.get('/updatepost/:id', (req, res) => {
     let newTitle = "Updated Title";
-    let sql = `UPDATE posts SET title = '${newTitle}' WHERE id = ${req.params.id}`;
-    db.query(sql, (err, result) => {
+    let sql = 'UPDATE posts SET title = ? WHERE id = ?';
+    db.query(sql, [newTitle, req.params.id], (err, result) => {
         if (err) throw err;
         console.log(result);
         res.send("post1 updated");
@@ -255,8 +265,8 @@ app.get('/updatepost/:id', (req, res) => {
 });
 
 app.put('/api/updatecurrentbid/:id', (req, res) => {
-    let sql = `UPDATE posts SET current_bid = ${req.body.current_bid} WHERE id = ${req.params.id}`;
-    db.query(sql, (err, result) => {
+    let sql = 'UPDATE posts SET current_bid = ? WHERE id = ?';
+    db.query(sql, [req.body.current_bid, req.params.id], (err, result) => {
         if (err) throw err;
         console.log(result);
         res.json(result);
@@ -339,8 +349,8 @@ app.delete('/api/deletealluserposts', (req, res) => {
 });
 
 app.get('/deletepost/:id', (req, res) => {
-    let sql = `DELETE FROM posts WHERE id = ${req.params.id}`;
-    db.query(sql, (err, result) => {
+    let sql = 'DELETE FROM posts WHERE id = ?';
+    db.query(sql, [req.params.id], (err, result) => {
         if (err) throw err;
         console.log(result);
         res.send("post1 deleted");
