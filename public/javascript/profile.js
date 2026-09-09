@@ -91,7 +91,7 @@ editForm.addEventListener('submit', function(event) {
             })
             .catch(error => {
                 console.error(error);
-            }) 
+            });
         } else {
             alert('No changes made');
         }

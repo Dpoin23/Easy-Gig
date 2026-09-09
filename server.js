@@ -166,8 +166,8 @@ app.post('/api/addpost', (req, res) => {
         if (err) throw err;
         console.log(result);
         res.json(result);
-    })
-})
+    });
+});
 
 // Select
 app.post('/api/signin', (req, res) => {
@@ -195,7 +195,7 @@ app.post('/api/signin', (req, res) => {
             }
         }
     });
-})
+});
 
 app.get('/api/getUserData', (req, res) => {
     let sql = 'SELECT name, email, password FROM users WHERE id = ?';
@@ -203,7 +203,7 @@ app.get('/api/getUserData', (req, res) => {
         if (err) throw err;
         res.json(result);
     });
-})
+});
 
 app.get('/api/getuser', (req, res) => {
     let sql = `SELECT * FROM users WHERE email = ?`;

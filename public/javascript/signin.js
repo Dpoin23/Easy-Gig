@@ -63,7 +63,7 @@ function accountNotFound() {
         const email = document.getElementById("email");
         const password = document.getElementById("password");
         
-        notFound.innerText = "Error, your email or password is incorrect"
+        notFound.innerText = "Error, your email or password is incorrect";
         notFound.style.textAlign = "center";
         notFound.style.color = "red";
         notFound.style.fontSize = "16px";
