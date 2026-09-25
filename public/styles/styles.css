@@ -10,6 +10,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: clip;
 }
 
 main {
@@ -18,10 +19,18 @@ main {
 
 .Header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+    list-style: none;
+    width: 100%;
     padding: 0;
     margin: 0;
+}
+
+.Header img {
+    max-width: 130px;
+    height: auto;
 }
 
 .Header-image {
@@ -78,11 +87,13 @@ main {
     align-items: center;
     margin: 1% auto;
     height: auto;
-    width: 750px;
+    width: min(750px, 100%);
+    max-width: 750px;
     border: 0;
-    padding: 10px;
+    padding: 10px 12px;
     display: flex;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 .search-input {
@@ -127,12 +138,14 @@ main {
 
 .signin-box, .createacc-box, .post-box, .signout-box {
     align-items: center;
-    width: 500px;
+    width: min(500px, calc(100% - 24px));
+    max-width: 500px;
     height: 500px;
     outline: 1px solid rgb(122, 122, 122);
     border-radius: 20px;
     margin: 2% auto;
     background-color: white;
+    box-sizing: border-box;
 }
 
 .post-box {
@@ -165,9 +178,11 @@ main {
 }
 
 .signin-ul input, .createacc-li input, .post-ul input {
-    width: 435px;
+    width: 100%;
+    max-width: 435px;
     height: 25px;
     font-size: 18px;
+    box-sizing: border-box;
 }
 
 .signin-button-div, .createacc-button-div, .post-button-div {
@@ -178,11 +193,13 @@ main {
 
 .signin-button, .createacc-button, .post-button, .signout-button {
     font-size: 18px;
-    width: 443px;
+    width: 100%;
+    max-width: 443px;
     border-radius: 10px;
     padding: 10px;
     cursor: pointer;
     border: 0;
+    box-sizing: border-box;
 }
 
 .signin-or {
@@ -247,11 +264,12 @@ main {
     align-items: center;
     border: 1px solid black;
     height: auto;
-    width: 750px;
+    width: min(750px, calc(100% - 24px));
     max-width: 750px;
     border-radius: 10px;
     margin: 2% auto;
     padding: 10px;
+    box-sizing: border-box;
 }
 
 .display-title {
@@ -367,6 +385,119 @@ main {
 
 .footer-info {
     font-size: 16px;
+    text-align: center;
+    padding: 0 16px 8px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+    .Header-obj {
+        font-size: 16px;
+        padding: 12px 10px;
+    }
+
+    .Header img {
+        max-width: 104px;
+    }
+
+    .search-bar {
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: 16px;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 8px;
+        font-size: 16px;
+    }
+
+    .search-label {
+        margin-right: 0;
+        text-align: left;
+    }
+
+    .search-select,
+    .search-button,
+    .display-input-button {
+        width: 100%;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .mypostsbutton {
+        width: 150px;
+        max-width: 100%;
+        height: 44px;
+    }
+
+    .signin-box,
+    .createacc-box,
+    .post-box {
+        height: auto;
+        margin: 16px auto;
+        padding-bottom: 8px;
+    }
+
+    .signin-ul input,
+    .createacc-li input,
+    .post-ul input,
+    .post-ul select {
+        max-width: none;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .post-ul select {
+        width: 100%;
+    }
+
+    .signin-button,
+    .createacc-button,
+    .post-button,
+    .signout-button {
+        max-width: none;
+        min-height: 44px;
+    }
+
+    .display-info,
+    .display-bid {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .display-location,
+    .display-type,
+    .display-pay {
+        width: auto;
+        max-width: none;
+    }
+
+    .display-bid .bid-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .display-input {
+        width: 100%;
+        height: 44px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    .info {
+        margin-right: 0;
+        padding: 0 16px;
+    }
+
+    .signout-box {
+        padding: 16px;
+    }
 }
 
 .footer-image {
