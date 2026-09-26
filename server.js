@@ -5,6 +5,16 @@ const crypto = require('node:crypto');
 const { rateLimit } = require('express-rate-limit');
 const { rankPosts } = require('./lib/searchRank');
 const { passwordsMatch } = require('./lib/passwords');
+const {
+    textField,
+    emailField,
+    passwordField,
+    signinPassword,
+    idField,
+    moneyField,
+    payTypeField,
+    searchField,
+} = require('./lib/sanitize');
 
 let dbReady = false;
 
@@ -56,6 +66,14 @@ function sendError(res, status, message) {
     if (!res.headersSent) {
         res.status(status).json({ error: message });
     }
+}
+
+function readField(res, parsed) {
+    if (parsed.error) {
+        sendError(res, 400, parsed.error);
+        return null;
+    }
+    return parsed.value;
 }
 
 function runQuery(res, sql, params, onSuccess) {
@@ -160,53 +178,64 @@ app.get('/adddecimaltobid', (req, res) => {
 // Insert
 app.post('/api/adduser', (req, res) => {
     const body = req.body || {};
-    let st;
-    let hash;
-    try {
-        st = crypto.randomBytes(16).toString('hex');
-        hash = crypto.scryptSync(body.password, st, 64).toString('hex');
-    } catch (err) {
-        console.error(err);
-        return sendError(res, 400, 'Invalid account details');
+    const name = readField(res, textField(body.name, 'Name'));
+    const email = readField(res, emailField(body.email));
+    const password = readField(res, passwordField(body.password));
+    if (name == null || email == null || password == null) {
+        return;
     }
 
-    const account = {
-        name: body.name,
-        email: body.email,
-        password: hash,
-        salt: st
-    };
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
 
-    runQuery(res, 'INSERT INTO users SET ?', account, (result) => {
-        console.log(result);
-        res.send('user added');
-    });
+    runQuery(
+        res,
+        'INSERT INTO users (name, email, password, salt) VALUES (?, ?, ?, ?)',
+        [name, email, hash, salt],
+        (result) => {
+            console.log(result);
+            res.send('user added');
+        }
+    );
 });
 
 app.post('/api/addpost', (req, res) => {
     const body = req.body || {};
-    const post = {
-        title: body.title,
-        description: body.description,
-        location: body.location,
-        max_pay: body.pay,
-        type_of_pay: body.payType,
-        user_id: body.user_id
-    };
+    const title = readField(res, textField(body.title, 'Title'));
+    const description = readField(res, textField(body.description, 'Description'));
+    const location = readField(res, textField(body.location, 'Location'));
+    const pay = readField(res, moneyField(body.pay, 'Pay'));
+    const payType = readField(res, payTypeField(body.payType));
+    const userId = readField(res, idField(body.user_id, 'User'));
+    if ([title, description, location, pay, payType, userId].some((value) => value == null)) {
+        return;
+    }
 
-    runQuery(res, 'INSERT INTO posts SET ?', post, (result) => {
-        console.log(result);
-        res.json(result);
-    });
+    runQuery(
+        res,
+        `INSERT INTO posts (title, description, location, max_pay, type_of_pay, user_id)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [title, description, location, pay, payType, userId],
+        (result) => {
+            console.log(result);
+            res.json(result);
+        }
+    );
 });
 
 // Select
 app.post('/api/signin', (req, res) => {
     const body = req.body || {};
+    const email = readField(res, emailField(body.em));
+    const password = readField(res, signinPassword(body.pw));
+    if (email == null || password == null) {
+        return;
+    }
+
     runQuery(
         res,
         'SELECT id, salt, password, name FROM users WHERE email = ?',
-        [body.em],
+        [email],
         (result) => {
             if (!result || result.length === 0) {
                 res.json({ error: 'Invalid credentials' });
@@ -215,7 +244,7 @@ app.post('/api/signin', (req, res) => {
 
             const user = result[0];
             try {
-                const derived = crypto.scryptSync(String(body.pw ?? ''), String(user.salt ?? ''), 64);
+                const derived = crypto.scryptSync(password, String(user.salt ?? ''), 64);
                 if (!passwordsMatch(user.password, derived)) {
                     res.json({ error: 'Invalid credentials' });
                     return;
@@ -237,10 +266,15 @@ app.post('/api/signin', (req, res) => {
 });
 
 app.get('/api/getUserData', (req, res) => {
+    const userId = readField(res, idField(req.query.userId, 'User'));
+    if (userId == null) {
+        return;
+    }
+
     runQuery(
         res,
-        'SELECT name, email, password FROM users WHERE id = ?',
-        [req.query.userId],
+        'SELECT name, email FROM users WHERE id = ?',
+        [userId],
         (result) => {
             res.json(result);
         }
@@ -248,10 +282,15 @@ app.get('/api/getUserData', (req, res) => {
 });
 
 app.get('/api/getuser', (req, res) => {
+    const email = readField(res, emailField(req.query.email));
+    if (email == null) {
+        return;
+    }
+
     runQuery(
         res,
-        'SELECT * FROM users WHERE email = ?',
-        [req.query.email],
+        'SELECT name, email FROM users WHERE email = ?',
+        [email],
         (result) => {
             res.json(result);
         }
@@ -264,27 +303,40 @@ function searchPosts(mode, search, res) {
     });
 }
 
+function searchBy(mode, req, res) {
+    const search = readField(res, searchField(req.query.search));
+    if (search == null) {
+        return;
+    }
+    searchPosts(mode, search, res);
+}
+
 app.get('/api/getpostsbytitle', (req, res) => {
-    searchPosts('title', req.query.search, res);
+    searchBy('title', req, res);
 });
 
 app.get('/api/getpostsbylocation', (req, res) => {
-    searchPosts('location', req.query.search, res);
+    searchBy('location', req, res);
 });
 
 app.get('/api/getpostsbytype', (req, res) => {
-    searchPosts('type', req.query.search, res);
+    searchBy('type', req, res);
 });
 
 app.get('/api/getpostsbypay', (req, res) => {
-    searchPosts('pay', req.query.search, res);
+    searchBy('pay', req, res);
 });
 
 app.get('/api/getpostsbyuserid', (req, res) => {
+    const userId = readField(res, idField(req.query.user_id, 'User'));
+    if (userId == null) {
+        return;
+    }
+
     runQuery(
         res,
         'SELECT * FROM posts WHERE user_id = ?',
-        [req.query.user_id],
+        [userId],
         (result) => {
             res.json(result);
         }
@@ -293,10 +345,15 @@ app.get('/api/getpostsbyuserid', (req, res) => {
 
 // Update
 app.get('/updatepost/:id', (req, res) => {
+    const postId = readField(res, idField(req.params.id, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
     runQuery(
         res,
         'UPDATE posts SET title = ? WHERE id = ?',
-        ['Updated Title', req.params.id],
+        ['Updated Title', postId],
         (result) => {
             console.log(result);
             res.send('post1 updated');
@@ -306,10 +363,16 @@ app.get('/updatepost/:id', (req, res) => {
 
 app.put('/api/updatecurrentbid/:id', (req, res) => {
     const body = req.body || {};
+    const postId = readField(res, idField(req.params.id, 'Post'));
+    const bid = readField(res, moneyField(body.current_bid, 'Bid'));
+    if (postId == null || bid == null) {
+        return;
+    }
+
     runQuery(
         res,
         'UPDATE posts SET current_bid = ? WHERE id = ?',
-        [body.current_bid, req.params.id],
+        [bid, postId],
         (result) => {
             console.log(result);
             res.json(result);
@@ -319,10 +382,17 @@ app.put('/api/updatecurrentbid/:id', (req, res) => {
 
 app.put('/api/updateuser', (req, res) => {
     const body = req.body || {};
+    const name = readField(res, textField(body.name, 'Name'));
+    const email = readField(res, emailField(body.email));
+    const userId = readField(res, idField(body.user_id, 'User'));
+    if (name == null || email == null || userId == null) {
+        return;
+    }
+
     runQuery(
         res,
-        'UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?',
-        [body.name, body.email, body.password, body.user_id],
+        'UPDATE users SET name = ?, email = ? WHERE id = ?',
+        [name, email, userId],
         (result) => {
             res.json(result);
         }
@@ -331,20 +401,19 @@ app.put('/api/updateuser', (req, res) => {
 
 app.put('/api/updatePassword', (req, res) => {
     const body = req.body || {};
-    let st;
-    let hash;
-    try {
-        st = crypto.randomBytes(16).toString('hex');
-        hash = crypto.scryptSync(body.newPassword, st, 64).toString('hex');
-    } catch (err) {
-        console.error(err);
-        return sendError(res, 400, 'Invalid password');
+    const password = readField(res, passwordField(body.newPassword));
+    const userId = readField(res, idField(body.userId, 'User'));
+    if (password == null || userId == null) {
+        return;
     }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
 
     runQuery(
         res,
         'UPDATE users SET password = ?, salt = ? WHERE id = ?',
-        [hash, st, body.userId],
+        [hash, salt, userId],
         (result) => {
             console.log(result);
             res.json(result);
@@ -377,7 +446,12 @@ app.delete('/deleteallusers', (req, res) => {
 
 app.delete('/api/deletepostbyid', (req, res) => {
     const body = req.body || {};
-    runQuery(res, 'DELETE FROM posts WHERE id = ?', [body.postId], (result) => {
+    const postId = readField(res, idField(body.postId, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
+    runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
         console.log(result);
         res.send(result);
     });
@@ -385,7 +459,12 @@ app.delete('/api/deletepostbyid', (req, res) => {
 
 app.delete('/api/deleteaccountbyid', (req, res) => {
     const body = req.body || {};
-    runQuery(res, 'DELETE FROM users WHERE id = ?', [body.user_id], (result) => {
+    const userId = readField(res, idField(body.user_id, 'User'));
+    if (userId == null) {
+        return;
+    }
+
+    runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
         console.log(result);
         res.send(result);
     });
@@ -393,14 +472,24 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
 
 app.delete('/api/deletealluserposts', (req, res) => {
     const body = req.body || {};
-    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [body.user_id], (result) => {
+    const userId = readField(res, idField(body.user_id, 'User'));
+    if (userId == null) {
+        return;
+    }
+
+    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], (result) => {
         console.log(result);
         res.json(result);
     });
 });
 
 app.get('/deletepost/:id', (req, res) => {
-    runQuery(res, 'DELETE FROM posts WHERE id = ?', [req.params.id], (result) => {
+    const postId = readField(res, idField(req.params.id, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
+    runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
         console.log(result);
         res.send('post1 deleted');
     });
