@@ -1,17 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap");
 
 :root {
-    --ink: #1c2430;
-    --ink-soft: #3e4a59;
-    --paper: #f3f4f6;
-    --surface: #ffffff;
-    --line: #e2e5ea;
-    --line-strong: #cfd5dd;
-    --muted: #667386;
-    --accent: #1e3a5f;
-    --accent-hover: #2a4d78;
-    --focus: rgba(30, 58, 95, 0.28);
-    --danger: #9f2c2c;
+    --ink: #1a1a1a;
+    --ink-soft: #4f4a45;
+    --paper: #e4dfd6;
+    --surface: #f3efe8;
+    --well: #eae4db;
+    --line: #d5cec3;
+    --line-strong: #c4baad;
+    --muted: #6e675f;
+    --accent: #1a1a1a;
+    --accent-hover: #3a3530;
+    --focus: rgba(26, 26, 26, 0.18);
+    --danger: #8f3a34;
     --shadow: 0 8px 24px rgba(28, 36, 48, 0.06);
     --shadow-lift: 0 14px 32px rgba(28, 36, 48, 0.1);
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -41,7 +42,7 @@ main {
 }
 
 ::selection {
-    background: #d5e0ee;
+    background: #ddd4c6;
     color: var(--ink);
 }
 
@@ -58,7 +59,7 @@ a {
     width: 100%;
     padding: 6px 12px;
     margin: 0;
-    background: rgba(255, 255, 255, 0.86);
+    background: #ebe6dd;
     backdrop-filter: blur(10px);
 }
 
@@ -343,7 +344,7 @@ select:focus-visible {
     border: 1px solid var(--line-strong);
     border-radius: 10px;
     padding: 0 12px;
-    background: var(--surface);
+    background: var(--well);
     color: var(--ink);
     transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
@@ -425,7 +426,7 @@ select:focus-visible {
     margin-left: 8px;
     height: 36px;
     cursor: pointer;
-    background-color: var(--paper);
+    background-color: var(--well);
 }
 
 .signin-box {
@@ -499,7 +500,7 @@ select:focus-visible {
 .display:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lift);
-    border-color: #c5ced8;
+    border-color: #c9bfb0;
 }
 
 .display-title {
@@ -513,7 +514,7 @@ select:focus-visible {
 
 .display-description {
     border: 1px solid var(--line);
-    background: var(--paper);
+    background: var(--well);
     height: auto;
     padding: 10px 12px;
     border-radius: 10px;
@@ -556,7 +557,7 @@ select:focus-visible {
     border-radius: 10px;
     height: auto;
     border: 1px solid var(--line);
-    background: #fbfbfa;
+    background: var(--well);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -598,7 +599,7 @@ select:focus-visible {
 
 .profile-notediting-li {
     border: 1px solid var(--line);
-    background: var(--paper);
+    background: var(--well);
     border-radius: 10px;
     padding: 10px 12px;
     color: var(--ink-soft);
@@ -645,7 +646,7 @@ select:focus-visible {
     justify-content: center;
     align-items: center;
     border-top: 1px solid var(--line);
-    background: var(--surface);
+    background: #ddd6cb;
     margin-top: auto;
     padding-bottom: 12px;
 }
