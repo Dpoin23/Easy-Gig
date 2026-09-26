@@ -27,7 +27,7 @@ function request(pathname, options = {}) {
       },
       (res) => {
         res.resume();
-        resolve(res.statusCode);
+        resolve({ statusCode: res.statusCode, headers: res.headers });
       }
     );
     req.on('timeout', () => {
@@ -79,13 +79,19 @@ async function main() {
     await waitForLog(child, `Server started on port ${PORT}`, START_MS);
 
     const home = await request('/');
-    if (home !== 200) {
-      throw new Error(`GET / expected 200, got ${home}`);
+    if (home.statusCode !== 200) {
+      throw new Error(`GET / expected 200, got ${home.statusCode}`);
+    }
+    if (home.headers['ratelimit-limit']) {
+      throw new Error('static files should not be rate limited');
     }
 
     const api = await request('/api/getpostsbytitle?search=smoke');
-    if (![200, 503].includes(api)) {
-      throw new Error(`GET /api/getpostsbytitle expected 200 or 503, got ${api}`);
+    if (![200, 503].includes(api.statusCode)) {
+      throw new Error(`GET /api/getpostsbytitle expected 200 or 503, got ${api.statusCode}`);
+    }
+    if (api.headers['ratelimit-limit'] !== '60') {
+      throw new Error(`search rate limit expected 60, got ${api.headers['ratelimit-limit']}`);
     }
 
     const badBody = 'not-json';
@@ -97,11 +103,14 @@ async function main() {
       },
       body: badBody,
     });
-    if (badJson !== 400) {
-      throw new Error(`POST /api/signin with invalid JSON expected 400, got ${badJson}`);
+    if (badJson.statusCode !== 400) {
+      throw new Error(`POST /api/signin with invalid JSON expected 400, got ${badJson.statusCode}`);
+    }
+    if (badJson.headers['ratelimit-limit'] !== '10') {
+      throw new Error(`auth rate limit expected 10, got ${badJson.headers['ratelimit-limit']}`);
     }
 
-    console.log(`smoke ok: /=${home} api=${api} badJson=${badJson}`);
+    console.log(`smoke ok: /=${home.statusCode} api=${api.statusCode} badJson=${badJson.statusCode}`);
   } catch (err) {
     failed = true;
     console.error('smoke failed:', err.message);

@@ -43,17 +43,63 @@ db.on('error', (err) => {
 
 const app = express();
 app.use(cors());
+
+function limiter(limit, windowMs) {
+    return rateLimit({
+        windowMs,
+        limit,
+        standardHeaders: true,
+        legacyHeaders: false,
+        statusCode: 429,
+        message: { error: 'Too many requests' },
+    });
+}
+
+const authLimiter = limiter(10, 15 * 60 * 1000);
+const writeLimiter = limiter(30, 15 * 60 * 1000);
+const readLimiter = limiter(60, 60 * 1000);
+const maintenanceLimiter = limiter(5, 15 * 60 * 1000);
+
+for (const path of ['/api/adduser', '/api/signin', '/api/updatePassword']) {
+    app.use(path, authLimiter);
+}
+for (const path of [
+    '/api/addpost',
+    '/api/updatecurrentbid',
+    '/api/updateuser',
+    '/api/deletepostbyid',
+    '/api/deleteaccountbyid',
+    '/api/deletealluserposts',
+]) {
+    app.use(path, writeLimiter);
+}
+for (const path of [
+    '/api/getUserData',
+    '/api/getuser',
+    '/api/getpostsbytitle',
+    '/api/getpostsbylocation',
+    '/api/getpostsbytype',
+    '/api/getpostsbypay',
+    '/api/getpostsbyuserid',
+]) {
+    app.use(path, readLimiter);
+}
+for (const path of [
+    '/createdb',
+    '/createpoststable',
+    '/createuserstable',
+    '/updatepost',
+    '/selectusers',
+    '/selectposts',
+    '/deleteallusers',
+    '/deletepost',
+    '/deletespecificpostfortesting',
+]) {
+    app.use(path, maintenanceLimiter);
+}
+
 app.use(express.json({ limit: '32kb' }));
 app.use(express.static('public'));
-
-// Throttle expensive DB-backed routes (CodeQL js/missing-rate-limiting)
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-app.use(apiLimiter);
 
 app.use('/api', (req, res, next) => {
     if (!dbReady) {
