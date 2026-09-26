@@ -6,7 +6,9 @@ Local gig board: Express + MySQL API with a static HTML/CSS/JS frontend.
 
 ```
 server.js          # Express API + static file server
+lib/               # Search ranking
 public/            # Frontend (HTML, JS, CSS, images)
+scripts/           # Smoke check and database seed
 test/              # Unit tests and local testing notes
 ```
 
@@ -22,6 +24,7 @@ Requires MySQL with database `easy_gig` (see connection settings in `server.js`)
 Search matches part of a title, location, pay type, or pay amount. Closer matches are listed first. Posts that only overlap in another field, or pay amounts nearby, appear below a Related searches line.
 
 ```bash
+npm run seed         # demo users and gigs; password is password123
 npm test
 npm run lint
 npm run syntax
