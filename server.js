@@ -4,6 +4,7 @@ const cors = require('cors');
 const crypto = require('node:crypto');
 const { rateLimit } = require('express-rate-limit');
 const { rankPosts } = require('./lib/searchRank');
+const { passwordsMatch } = require('./lib/passwords');
 
 let dbReady = false;
 
@@ -25,9 +26,14 @@ db.connect((err) => {
     console.log('mysql connected to easy_gig');
 });
 
+db.on('error', (err) => {
+    dbReady = false;
+    console.error('MySQL connection error:', err.message);
+});
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '32kb' }));
 app.use(express.static('public'));
 
 // Throttle expensive DB-backed routes (CodeQL js/missing-rate-limiting)
@@ -46,19 +52,40 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+function sendError(res, status, message) {
+    if (!res.headersSent) {
+        res.status(status).json({ error: message });
+    }
+}
+
+function runQuery(res, sql, params, onSuccess) {
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            console.error(err.code || 'query', err.message);
+            sendError(res, 500, 'Database error');
+            return;
+        }
+
+        try {
+            onSuccess(result);
+        } catch (handlerErr) {
+            console.error(handlerErr);
+            sendError(res, 500, 'Server error');
+        }
+    });
+}
+
 // Create database
 app.get('/createdb', (req, res) => {
-    let sql = "CREATE DATABASE easy_gig";
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'CREATE DATABASE easy_gig', [], (result) => {
         console.log(result);
         res.send('database created');
-    })
+    });
 });
 
 // Create posts table
 app.get('/createpoststable', (req, res) => {
-    let sql = `CREATE TABLE IF NOT EXISTS posts(
+    const sql = `CREATE TABLE IF NOT EXISTS posts(
         id int AUTO_INCREMENT,
         user_id INT,
         title VARCHAR(255),
@@ -70,16 +97,15 @@ app.get('/createpoststable', (req, res) => {
         PRIMARY KEY(id)
         )`;
 
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, sql, [], (result) => {
         console.log(result);
-        res.send('posts table created')
+        res.send('posts table created');
     });
 });
 
 // Create users table
 app.get('/createuserstable', (req, res) => {
-    let sql = `CREATE TABLE IF NOT EXISTS users(
+    const sql = `CREATE TABLE IF NOT EXISTS users(
         id int AUTO_INCREMENT,
         name VARCHAR(255),
         email VARCHAR(255),
@@ -87,8 +113,7 @@ app.get('/createuserstable', (req, res) => {
         PRIMARY KEY(id)
         )`;
 
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, sql, [], (result) => {
         console.log(result);
         res.send('users table created');
     });
@@ -134,37 +159,42 @@ app.get('/adddecimaltobid', (req, res) => {
 
 // Insert
 app.post('/api/adduser', (req, res) => {
-    const st = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(req.body.password, st, 64).toString('hex');
+    const body = req.body || {};
+    let st;
+    let hash;
+    try {
+        st = crypto.randomBytes(16).toString('hex');
+        hash = crypto.scryptSync(body.password, st, 64).toString('hex');
+    } catch (err) {
+        console.error(err);
+        return sendError(res, 400, 'Invalid account details');
+    }
 
-    let account = {
-        name: req.body.name,
-        email: req.body.email,
+    const account = {
+        name: body.name,
+        email: body.email,
         password: hash,
         salt: st
     };
 
-    let sql = "INSERT INTO users SET ?";
-    db.query(sql, account, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'INSERT INTO users SET ?', account, (result) => {
         console.log(result);
-        res.send("user added");
+        res.send('user added');
     });
 });
 
 app.post('/api/addpost', (req, res) => {
-    let post = {
-        title: req.body.title,
-        description: req.body.description,
-        location: req.body.location,
-        max_pay: req.body.pay,
-        type_of_pay: req.body.payType,
-        user_id: req.body.user_id
+    const body = req.body || {};
+    const post = {
+        title: body.title,
+        description: body.description,
+        location: body.location,
+        max_pay: body.pay,
+        type_of_pay: body.payType,
+        user_id: body.user_id
     };
 
-    let sql = 'INSERT INTO posts SET ?';
-    db.query(sql, post, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'INSERT INTO posts SET ?', post, (result) => {
         console.log(result);
         res.json(result);
     });
@@ -172,51 +202,64 @@ app.post('/api/addpost', (req, res) => {
 
 // Select
 app.post('/api/signin', (req, res) => {
-    let sql = `SELECT id, salt, password, name FROM users WHERE email = ?`;
-    db.query(sql, [req.body.em], (err, result) => {
-        if (err) throw err;
-        if (!result || result.length == 0) {
-            res.json({ error: "Invalid Credentials" });
-        } else {
-            const user = result[0];
-            const salt = user.salt;
-            const derivedpw = crypto.scryptSync(req.body.pw, salt, 64);
-
-            const match = crypto.timingSafeEqual(Buffer.from(user.password, 'hex'), derivedpw);
-
-            if (!match) {
-                res.json({ error: "Invalid credentials" });
-            } else {
-                res.json({
-                    success: true,
-                    name: user.name,
-                    userId: user.id,
-                    salt: user.salt
-                });
+    const body = req.body || {};
+    runQuery(
+        res,
+        'SELECT id, salt, password, name FROM users WHERE email = ?',
+        [body.em],
+        (result) => {
+            if (!result || result.length === 0) {
+                res.json({ error: 'Invalid credentials' });
+                return;
             }
+
+            const user = result[0];
+            try {
+                const derived = crypto.scryptSync(String(body.pw ?? ''), String(user.salt ?? ''), 64);
+                if (!passwordsMatch(user.password, derived)) {
+                    res.json({ error: 'Invalid credentials' });
+                    return;
+                }
+            } catch (err) {
+                console.error(err);
+                sendError(res, 500, 'Server error');
+                return;
+            }
+
+            res.json({
+                success: true,
+                name: user.name,
+                userId: user.id,
+                salt: user.salt
+            });
         }
-    });
+    );
 });
 
 app.get('/api/getUserData', (req, res) => {
-    let sql = 'SELECT name, email, password FROM users WHERE id = ?';
-    db.query(sql, req.query.userId, (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    });
+    runQuery(
+        res,
+        'SELECT name, email, password FROM users WHERE id = ?',
+        [req.query.userId],
+        (result) => {
+            res.json(result);
+        }
+    );
 });
 
 app.get('/api/getuser', (req, res) => {
-    let sql = `SELECT * FROM users WHERE email = ?`;
-    db.query(sql, [req.query.email], (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    })
+    runQuery(
+        res,
+        'SELECT * FROM users WHERE email = ?',
+        [req.query.email],
+        (result) => {
+            res.json(result);
+        }
+    );
 });
 
 function searchPosts(mode, search, res) {
-    db.query('SELECT * FROM posts', (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'SELECT * FROM posts', [], (result) => {
         res.json(rankPosts(result, search, mode));
     });
 }
@@ -238,124 +281,154 @@ app.get('/api/getpostsbypay', (req, res) => {
 });
 
 app.get('/api/getpostsbyuserid', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE user_id = ?`;
-    db.query(sql, req.query.user_id, (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    })
+    runQuery(
+        res,
+        'SELECT * FROM posts WHERE user_id = ?',
+        [req.query.user_id],
+        (result) => {
+            res.json(result);
+        }
+    );
 });
 
-// Update 
+// Update
 app.get('/updatepost/:id', (req, res) => {
-    let newTitle = "Updated Title";
-    let sql = 'UPDATE posts SET title = ? WHERE id = ?';
-    db.query(sql, [newTitle, req.params.id], (err, result) => {
-        if (err) throw err;
-        console.log(result);
-        res.send("post1 updated");
-    });
+    runQuery(
+        res,
+        'UPDATE posts SET title = ? WHERE id = ?',
+        ['Updated Title', req.params.id],
+        (result) => {
+            console.log(result);
+            res.send('post1 updated');
+        }
+    );
 });
 
 app.put('/api/updatecurrentbid/:id', (req, res) => {
-    let sql = 'UPDATE posts SET current_bid = ? WHERE id = ?';
-    db.query(sql, [req.body.current_bid, req.params.id], (err, result) => {
-        if (err) throw err;
-        console.log(result);
-        res.json(result);
-    });
+    const body = req.body || {};
+    runQuery(
+        res,
+        'UPDATE posts SET current_bid = ? WHERE id = ?',
+        [body.current_bid, req.params.id],
+        (result) => {
+            console.log(result);
+            res.json(result);
+        }
+    );
 });
 
 app.put('/api/updateuser', (req, res) => {
-    let sql = `UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?`;
-    db.query(sql, [req.body.name, req.body.email, req.body.password, req.body.user_id], (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    });
+    const body = req.body || {};
+    runQuery(
+        res,
+        'UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?',
+        [body.name, body.email, body.password, body.user_id],
+        (result) => {
+            res.json(result);
+        }
+    );
 });
 
 app.put('/api/updatePassword', (req, res) => {
-    const st = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(req.body.newPassword, st, 64).toString('hex');
+    const body = req.body || {};
+    let st;
+    let hash;
+    try {
+        st = crypto.randomBytes(16).toString('hex');
+        hash = crypto.scryptSync(body.newPassword, st, 64).toString('hex');
+    } catch (err) {
+        console.error(err);
+        return sendError(res, 400, 'Invalid password');
+    }
 
-    let sql = 'UPDATE users SET password = ?, salt = ? WHERE id = ?';
-    db.query(sql, [hash, st, req.body.userId], (err, result) => {
-        if (err) throw err;
-        console.log(result)
-        res.json(result);
-    });
+    runQuery(
+        res,
+        'UPDATE users SET password = ?, salt = ? WHERE id = ?',
+        [hash, st, body.userId],
+        (result) => {
+            console.log(result);
+            res.json(result);
+        }
+    );
 });
 
 // Testing
 app.get('/selectusers', (req, res) => {
-    let sql = "SELECT * FROM users";
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'SELECT * FROM users', [], (result) => {
         console.log(result);
-        res.send("users fetched");
+        res.send('users fetched');
     });
 });
 
 app.get('/selectposts', (req, res) => {
-    let sql = "SELECT * FROM posts";
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'SELECT * FROM posts', [], (result) => {
         console.log(result);
         res.send('test post fetched');
-    })
+    });
 });
 
 // Delete
-app.delete('/deleteallusers', (_req, _res) => {
-    let sql = 'DELETE FROM users';
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+app.delete('/deleteallusers', (req, res) => {
+    runQuery(res, 'DELETE FROM users', [], (result) => {
         console.log(result);
-    })
+        res.send('users deleted');
+    });
 });
 
 app.delete('/api/deletepostbyid', (req, res) => {
-    let sql = 'DELETE FROM posts WHERE id = ?';
-    db.query(sql, req.body.postId, (err, result) => {
-        if (err) throw err;
+    const body = req.body || {};
+    runQuery(res, 'DELETE FROM posts WHERE id = ?', [body.postId], (result) => {
         console.log(result);
         res.send(result);
     });
 });
 
 app.delete('/api/deleteaccountbyid', (req, res) => {
-    let sql = 'DELETE FROM users WHERE id = ?';
-    db.query(sql, req.body.user_id, (err, result) => {
-        if (err) throw err;
+    const body = req.body || {};
+    runQuery(res, 'DELETE FROM users WHERE id = ?', [body.user_id], (result) => {
         console.log(result);
         res.send(result);
-    })
+    });
 });
 
 app.delete('/api/deletealluserposts', (req, res) => {
-    let sql = `DELETE FROM posts WHERE user_id = ?`;
-    db.query(sql, req.body.user_id, (err, result) => {
-        if (err) throw err;
+    const body = req.body || {};
+    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [body.user_id], (result) => {
         console.log(result);
         res.json(result);
-    })
+    });
 });
 
 app.get('/deletepost/:id', (req, res) => {
-    let sql = 'DELETE FROM posts WHERE id = ?';
-    db.query(sql, [req.params.id], (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'DELETE FROM posts WHERE id = ?', [req.params.id], (result) => {
         console.log(result);
-        res.send("post1 deleted");
+        res.send('post1 deleted');
     });
 });
 
 app.get('/deletespecificpostfortesting', (req, res) => {
-    let sql = 'DELETE FROM posts WHERE id = 3';
-    db.query(sql, (err, result) => {
-        if (err) throw err;
+    runQuery(res, 'DELETE FROM posts WHERE id = 3', [], (result) => {
         console.log(result);
         res.send('post deleted');
     });
+});
+
+app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        next(err);
+        return;
+    }
+
+    const status = Number(err.status || err.statusCode) || 500;
+    let message = 'Server error';
+    if (status === 400) {
+        message = 'Invalid request';
+    } else if (status === 413) {
+        message = 'Request is too large';
+    }
+
+    console.error(err.message || err);
+    res.status(status).json({ error: message });
 });
 
 // Listen

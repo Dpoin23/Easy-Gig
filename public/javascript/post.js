@@ -42,7 +42,9 @@ function addPostToDB(ti, dsp, loc, pT, p) {
 
     })
     .then(data => { console.log('Data inserted successfully: ', data); })
-    .catch(error => { throw error; })
+    .catch(error => {
+        console.error(error);
+    });
 }
 
 function requireSignIn() {

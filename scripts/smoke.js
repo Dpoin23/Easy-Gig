@@ -14,10 +14,17 @@ const ROOT = path.resolve(__dirname, '..');
 const START_MS = 8000;
 const REQ_MS = 5000;
 
-function request(pathname) {
+function request(pathname, options = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.get(
-      { hostname: '127.0.0.1', port: PORT, path: pathname, timeout: REQ_MS },
+    const req = http.request(
+      {
+        hostname: '127.0.0.1',
+        port: PORT,
+        path: pathname,
+        method: options.method || 'GET',
+        timeout: REQ_MS,
+        headers: options.headers,
+      },
       (res) => {
         res.resume();
         resolve(res.statusCode);
@@ -27,6 +34,10 @@ function request(pathname) {
       req.destroy(new Error(`timeout requesting ${pathname}`));
     });
     req.on('error', reject);
+    if (options.body) {
+      req.write(options.body);
+    }
+    req.end();
   });
 }
 
@@ -77,7 +88,20 @@ async function main() {
       throw new Error(`GET /api/getpostsbytitle expected 200 or 503, got ${api}`);
     }
 
-    console.log(`smoke ok: /=${home} api=${api}`);
+    const badBody = 'not-json';
+    const badJson = await request('/api/signin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': String(Buffer.byteLength(badBody)),
+      },
+      body: badBody,
+    });
+    if (badJson !== 400) {
+      throw new Error(`POST /api/signin with invalid JSON expected 400, got ${badJson}`);
+    }
+
+    console.log(`smoke ok: /=${home} api=${api} badJson=${badJson}`);
   } catch (err) {
     failed = true;
     console.error('smoke failed:', err.message);

@@ -50,7 +50,7 @@ function updateDB(nm, em, pw) {
         console.log(`data inserted successfully: ${data}`);
     })
     .catch(error => {
-        throw error;
+        console.error(error);
     });
 }
 
