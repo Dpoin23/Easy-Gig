@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "syntax": "node --check server.js && node --check test/password.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js && node --check scripts/smoke.js",
+    "syntax": "node --check server.js && node --check lib/searchRank.js && node --check test/password.test.js && node --check test/searchRank.test.js && node --check test/testingNewFeatures.js && node --check public/javascript/main.js && node --check public/javascript/create.js && node --check public/javascript/signin.js && node --check public/javascript/post.js && node --check public/javascript/profile.js && node --check public/javascript/newPassword.js && node --check public/javascript/updateHeaderScript.js && node --check scripts/smoke.js",
     "test": "node --test test/*.js",
     "smoke": "node scripts/smoke.js"
   },

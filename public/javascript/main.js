@@ -15,47 +15,71 @@ search_form.addEventListener('submit', function(e) {
     }
 });
 
-function display(data) {
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function appendPost(results, point) {
+    const box = document.createElement('div');
+
+    box.classList.add('display');
+    box.innerHTML = `<div class="display-title">${escapeHtml(point.title)}</div>
+                    <label><strong>Description</strong></label>
+                    <p class="display-description">${escapeHtml(point.description)}</p>
+                    <div class="display-info">
+                        <div class="display-location">Location: ${escapeHtml(point.location)}</div>
+                        <div class="display-type">Type of Pay: ${escapeHtml(point.type_of_pay)}</div>
+                        <div class="display-pay">Pay: $${escapeHtml(point.max_pay)}</div>
+                    </div>
+                    <div class="display-bid">
+                        <div>Current Bid: $${escapeHtml(point.current_bid)}</div>
+                        <div>
+                            <form class="bid-form">
+                                <input type="number" step="0.01" name="bid" placeholder="Enter A Bid . . ." class="display-input" required>
+                                <button class="display-input-button" type="submit">Place</button>
+                            </form>
+                        </div>
+                    </div>`;
+
+    results.appendChild(box);
+
+    const display_form = box.querySelector('form');
+    display_form.addEventListener('submit', function(b) {
+        b.preventDefault();
+        const event_data = new FormData(this);
+        const bid = parseFloat(event_data.get('bid'));
+
+        if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
+            updateBid(point, bid);
+        } else {
+            alert('Bid is not valid.');
+        }
+    });
+}
+
+function displayGrouped(relevant, related) {
     clearSearch();
     const results = document.getElementById('search-results');
 
-    data.forEach(function(point) {
-        const box = document.createElement('div');
-
-        box.classList.add('display');
-        box.innerHTML = `<div class="display-title">${point.title}</div>
-                        <label><strong>Description</strong></label>
-                        <p class="display-description">${point.description}</p>
-                        <div class="display-info">
-                            <div class="display-location">Location: ${point.location}</div>
-                            <div class="display-type">Type of Pay: ${point.type_of_pay}</div>
-                            <div class="display-pay">Pay: $${point.max_pay}</div>
-                        </div>
-                        <div class="display-bid">
-                            <div>Current Bid: $${point.current_bid}</div>
-                            <div>
-                                <form class="bid-form">
-                                    <input type="number" step="0.01" name="bid" placeholder="Enter A Bid . . ." class="display-input" required>
-                                    <button class="display-input-button" type="submit">Place</button>
-                                </form>
-                            </div>
-                        </div>`;
-            
-        results.appendChild(box);
-
-        const display_form = box.querySelector('form');
-        display_form.addEventListener('submit', function(b) {
-            b.preventDefault();
-            const event_data = new FormData(this);
-            const bid = parseFloat(event_data.get('bid'));
-
-            if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
-                updateBid(point, bid);
-            } else {
-                alert('Bid is not valid.');
-            }
-        });
+    relevant.forEach(function(point) {
+        appendPost(results, point);
     });
+
+    if (related.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'search-divider';
+        divider.setAttribute('role', 'separator');
+        divider.textContent = 'Related searches';
+        results.appendChild(divider);
+
+        related.forEach(function(point) {
+            appendPost(results, point);
+        });
+    }
 }
 
 async function updateBid(post, bid) {
@@ -97,84 +121,60 @@ function couldNotFind(message) {
     results.appendChild(response_message_div);
 }
 
-async function searchTitle(search) {
+async function runSearch(url, emptyMessage) {
     try {
-        const response = await fetch(`/api/getpostsbytitle?search=${search}`);
+        const response = await fetch(url);
 
         if (!response.ok) {
-            couldNotFind(`Could not find any posts with the title: "${search}"`);
+            couldNotFind(emptyMessage);
+            return;
         }
-        
-        const data = await response.json();
 
-        if (data.length == 0) {
-            couldNotFind(`Could not find any posts with the title: ${search}`);
-        } else {
-            display(data);
+        const data = await response.json();
+        const relevant = Array.isArray(data) ? data : (data.relevant || []);
+        const related = Array.isArray(data) ? [] : (data.related || []);
+
+        if (relevant.length === 0 && related.length === 0) {
+            couldNotFind(emptyMessage);
+            return;
         }
+
+        displayGrouped(relevant, related);
     } catch (err) {
         console.error(err);
     }
 }
 
+async function searchTitle(search) {
+    const query = encodeURIComponent(search);
+    await runSearch(
+        `/api/getpostsbytitle?search=${query}`,
+        `Could not find any posts with the title: "${search}"`
+    );
+}
+
 async function searchLocation(search) {
-    try {
-        const response = await fetch(`/api/getpostsbylocation?search=${search}`);
-
-        if (!response.ok) {
-            couldNotFind(`Could not find any posts with the location: "${search}`);
-        }
-
-        const data = await response.json();
-
-        if (data.length == 0) {
-            couldNotFind(`Could not find any posts with the location: ${search}`);
-        } else {
-            display(data);
-        }
-    } catch (error) {
-        console.error(error);
-    }
+    const query = encodeURIComponent(search);
+    await runSearch(
+        `/api/getpostsbylocation?search=${query}`,
+        `Could not find any posts with the location: "${search}"`
+    );
 }
 
 async function searchType(search) {
-    try {
-        const response = await fetch(`/api/getpostsbytype?search=${search}`);
-
-        if (!response.ok) {
-            couldNotFind(`Could not find any posts with type of pay: "${search}`);
-        }
-
-        const data = await response.json();
-
-        if (data.length == 0) {
-            couldNotFind(`Could not find any posts with the type: ${search}`);
-        } else {
-            display(data);
-        }
-    } catch (error) {
-        console.error(error);
-    }
+    const query = encodeURIComponent(search);
+    await runSearch(
+        `/api/getpostsbytype?search=${query}`,
+        `Could not find any posts with type of pay: "${search}"`
+    );
 }
 
 async function searchPay(search) {
-    try {
-        const response = await fetch(`/api/getpostsbypay?search=${search}`);
-
-        if (!response.ok) {
-            couldNotFind(`Could not find any posts with type of pay: "${search}`);
-        }
-
-        const data = await response.json();
-
-        if (data.length == 0) {
-            couldNotFind(`Could not find any posts with pay: ${search}`);
-        } else {
-            display(data);
-        }
-    } catch (error) {
-        console.error(error);
-    }
+    const query = encodeURIComponent(search);
+    await runSearch(
+        `/api/getpostsbypay?search=${query}`,
+        `Could not find any posts with pay: "${search}"`
+    );
 }
 
 function clearSearch() {

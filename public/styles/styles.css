@@ -481,6 +481,28 @@ select:focus-visible {
     white-space: nowrap;
 }
 
+.search-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: min(750px, calc(100% - 24px));
+    max-width: 750px;
+    margin: 28px auto 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.search-divider::before,
+.search-divider::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: var(--line-strong);
+}
+
 .display {
     display: grid;
     align-items: center;

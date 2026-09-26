@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('node:crypto');
 const { rateLimit } = require('express-rate-limit');
+const { rankPosts } = require('./lib/searchRank');
 
 let dbReady = false;
 
@@ -213,36 +214,27 @@ app.get('/api/getuser', (req, res) => {
     })
 });
 
-app.get('/api/getpostsbytitle', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE title = ?`;
-    db.query(sql, req.query.search, (err, result) => {
+function searchPosts(mode, search, res) {
+    db.query('SELECT * FROM posts', (err, result) => {
         if (err) throw err;
-        res.json(result);
-    })
+        res.json(rankPosts(result, search, mode));
+    });
+}
+
+app.get('/api/getpostsbytitle', (req, res) => {
+    searchPosts('title', req.query.search, res);
 });
 
 app.get('/api/getpostsbylocation', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE location = ?`;
-    db.query(sql, req.query.search, (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    });
+    searchPosts('location', req.query.search, res);
 });
 
 app.get('/api/getpostsbytype', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE type_of_pay = ?`;
-    db.query(sql, req.query.search, (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    });
+    searchPosts('type', req.query.search, res);
 });
 
 app.get('/api/getpostsbypay', (req, res) => {
-    let sql = `SELECT * FROM posts WHERE max_pay = ?`;
-    db.query(sql, req.query.search, (err, result) => {
-        if (err) throw err;
-        res.json(result);
-    });
+    searchPosts('pay', req.query.search, res);
 });
 
 app.get('/api/getpostsbyuserid', (req, res) => {
