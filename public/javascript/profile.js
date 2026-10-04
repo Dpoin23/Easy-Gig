@@ -219,10 +219,7 @@ function displayPosts(posts) {
             const delete_form = box.querySelector('form');
             delete_form.addEventListener('submit', function(event) {
                 event.preventDefault();
-                alert('deleting post. . .');
-                deletePost(post.id);
-                postsbox.removeChild(box);
-
+                deletePost(post.id, box);
             });
         });
         updateDisplayButton();
@@ -244,31 +241,43 @@ function updateDisplayButton() {
     }
 }
 
-async function deletePost(post_id) {
-    fetch('/api/deletepostbyid', {
-        method: 'DELETE',
-        headers: {
-            'Content-type': 'application/json'
-        },
-        body: JSON.stringify({ postId: post_id})
-    })
-    .then(response => {
+function showPostsButton() {
+    const button = document.getElementById('mypostsbutton');
+    button.textContent = 'Show My Posts';
+    sessionStorage.setItem('mypostsdisplay', 'false');
+}
+
+async function deletePost(post_id, box) {
+    const postsbox = document.getElementById('myposts');
+
+    try {
+        const response = await fetch('/api/deletepostbyid', {
+            method: 'DELETE',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify({ postId: post_id })
+        });
+
         if (!response.ok) {
             console.error('status: ', response.status);
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Delete successful: ', data);
-    })
-    .catch(err => {
-        console.error(err);
-    })
 
-    const posts = await getUserPosts();
-    if (posts.length == 0) {
-        updateDisplayButton();
-        sessionStorage.setItem("mypostsdisplay", "false");
+        await response.json();
+        postsbox.removeChild(box);
+
+        const posts = await getUserPosts();
+        const remaining = Array.isArray(posts)
+            ? posts.length
+            : postsbox.querySelectorAll('.myposts').length;
+
+        if (remaining === 0) {
+            postsbox.innerHTML = '';
+            showPostsButton();
+        }
+    } catch (err) {
+        console.error(err);
     }
 }
 
