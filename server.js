@@ -4,7 +4,7 @@ const cors = require('cors');
 const crypto = require('node:crypto');
 const { rateLimit } = require('express-rate-limit');
 const { rankPosts } = require('./lib/searchRank');
-const { passwordsMatch } = require('./lib/passwords');
+const { findMatchingUser } = require('./lib/passwords');
 const {
     textField,
     emailField,
@@ -234,15 +234,17 @@ app.post('/api/adduser', (req, res) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
 
-    runQuery(
-        res,
-        'INSERT INTO users (name, email, password, salt) VALUES (?, ?, ?, ?)',
-        [name, email, hash, salt],
-        (result) => {
-            console.log(result);
-            res.send('user added');
-        }
-    );
+    rejectIfEmailTaken(res, email, null, () => {
+        runQuery(
+            res,
+            'INSERT INTO users (name, email, password, salt) VALUES (?, ?, ?, ?)',
+            [name, email, hash, salt],
+            (result) => {
+                console.log(result);
+                res.json({ ok: true });
+            }
+        );
+    });
 });
 
 app.post('/api/addpost', (req, res) => {
@@ -288,16 +290,9 @@ app.post('/api/signin', (req, res) => {
                 return;
             }
 
-            const user = result[0];
-            try {
-                const derived = crypto.scryptSync(password, String(user.salt ?? ''), 64);
-                if (!passwordsMatch(user.password, derived)) {
-                    res.json({ error: 'Invalid credentials' });
-                    return;
-                }
-            } catch (err) {
-                console.error(err);
-                sendError(res, 500, 'Server error');
+            const user = findMatchingUser(result, password);
+            if (!user) {
+                res.json({ error: 'Invalid credentials' });
                 return;
             }
 
@@ -435,15 +430,32 @@ app.put('/api/updateuser', (req, res) => {
         return;
     }
 
-    runQuery(
-        res,
-        'UPDATE users SET name = ?, email = ? WHERE id = ?',
-        [name, email, userId],
-        (result) => {
-            res.json(result);
-        }
-    );
+    rejectIfEmailTaken(res, email, userId, () => {
+        runQuery(
+            res,
+            'UPDATE users SET name = ?, email = ? WHERE id = ?',
+            [name, email, userId],
+            (result) => {
+                res.json(result);
+            }
+        );
+    });
 });
+
+function rejectIfEmailTaken(res, email, exceptUserId, onFree) {
+    const sql = exceptUserId == null
+        ? 'SELECT id FROM users WHERE email = ? LIMIT 1'
+        : 'SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1';
+    const params = exceptUserId == null ? [email] : [email, exceptUserId];
+
+    runQuery(res, sql, params, (existing) => {
+        if (existing.length > 0) {
+            sendError(res, 409, 'Email is already registered');
+            return;
+        }
+        onFree();
+    });
+}
 
 app.put('/api/updatePassword', (req, res) => {
     const body = req.body || {};

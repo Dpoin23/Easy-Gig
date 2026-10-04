@@ -9,14 +9,10 @@ const profileBox = document.getElementById('profile-box');
 profileBox.innerHTML = `<form id="edit-profile-form">
                             <ul class="createacc-ul" id="profile-ul">
                                 <li class="createacc-li"><strong>Name</strong></li>
-                                <li class="createacc-li profile-notediting-li" id="name-li">
-                                    ${userData.name}
-                                </li>
+                                <li class="createacc-li profile-notediting-li" id="name-li"></li>
 
                                 <li class="createacc-li"><strong>Email Address</strong></li>
-                                <li class="createacc-li profile-notediting-li" id="email-li">
-                                    ${userData.email}
-                                </li>
+                                <li class="createacc-li profile-notediting-li" id="email-li"></li>
 
                                 <li class="createacc-button-div profile-buttons">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
@@ -27,6 +23,8 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                 </li>
                             </ul>
                         </form>`;
+document.getElementById('name-li').textContent = userData.name;
+document.getElementById('email-li').textContent = userData.email;
 
 const editForm = document.getElementById('edit-profile-form');
 editForm.addEventListener('submit', function(event) {
@@ -56,63 +54,95 @@ editForm.addEventListener('submit', function(event) {
         nameLi.classList.remove('profile-notediting-li');
         emailLi.classList.remove('profile-notediting-li');
 
-        nameLi.innerHTML = `<input type="text" id="name" name="name" required value="${newUserData.name}">`;
-        emailLi.innerHTML = `<input type="text" id="email" name="email" required value="${newUserData.email}">`;
+        nameLi.replaceChildren(profileField('name', newUserData.name));
+        emailLi.replaceChildren(profileField('email', newUserData.email));
         button.innerText = 'Save';
     } else if (!status && !changingPw) {
-        localStorage.setItem('editing', 'false');
-
         const data = new FormData(this);
         const newData = {
             name: data.get('name'),
             email: data.get('email'),
             user_id: userId
         };
+        const unchanged = newData.name == newUserData.name && newData.email == newUserData.email;
 
-        if (newData.name != newUserData.name || newData.email != newUserData.email) {
-            fetch('/api/updateuser', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Status: ', response.status);
-                }
-                console.log(response);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Data inserted successfully: ', data);
-                sessionStorage.setItem('user', JSON.stringify(newData));
-                alert('saved');
-            })
-            .catch(error => {
-                console.error(error);
-            });
-        } else {
+        if (unchanged) {
+            localStorage.setItem('editing', 'false');
+            showProfileSummary(newUserData.name, newUserData.email);
             alert('No changes made');
+            return;
         }
 
-        nameLi.classList.add('profile-notediting-li');
-        emailLi.classList.add('profile-notediting-li');
-        
-        const editpassword = document.createElement("li");
-        editpassword.classList.add("createacc-button-div");
-        editpassword.classList.add("profile-buttons");
-        editpassword.id = "profile-changepw";
-        editpassword.innerHTML = '<button class="createacc-button" id="change-password" type="button" onclick="editPassword()">Change Password</button>';
-
-        ul.removeChild(document.getElementById("profile-delete-button"));
-        ul.appendChild(editpassword);
-
-        nameLi.innerHTML = `${newData.name}`;
-        emailLi.innerHTML = `${newData.email}`;
-        button.innerText = 'Edit';
+        fetch('/api/updateuser', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newData)
+        })
+        .then(response => {
+            return response.json().then(body => {
+                if (!response.ok) {
+                    throw new Error(body.error || 'Could not update profile');
+                }
+                return body;
+            });
+        })
+        .then(() => {
+            const savedUser = {
+                id: Number(userId),
+                name: newData.name,
+                email: newData.email
+            };
+            sessionStorage.setItem('user', JSON.stringify(savedUser));
+            sessionStorage.setItem('userId', String(savedUser.id));
+            localStorage.setItem('editing', 'false');
+            showProfileSummary(savedUser.name, savedUser.email);
+            alert('saved');
+        })
+        .catch(error => {
+            console.error(error);
+            alert(error.message || 'Could not update profile');
+        });
     }
 });
+
+function profileField(name, value) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = name;
+    input.name = name;
+    input.required = true;
+    input.value = value ?? '';
+    return input;
+}
+
+function showProfileSummary(name, email) {
+    const nameLi = document.getElementById('name-li');
+    const emailLi = document.getElementById('email-li');
+    const button = document.getElementById('button-li');
+    const ul = document.getElementById('profile-ul');
+
+    nameLi.classList.add('profile-notediting-li');
+    emailLi.classList.add('profile-notediting-li');
+    nameLi.textContent = name;
+    emailLi.textContent = email;
+    button.innerText = 'Edit';
+
+    const editpassword = document.createElement('li');
+    editpassword.classList.add('createacc-button-div');
+    editpassword.classList.add('profile-buttons');
+    editpassword.id = 'profile-changepw';
+    editpassword.innerHTML = '<button class="createacc-button" id="change-password" type="button" onclick="editPassword()">Change Password</button>';
+
+    const deleteButton = document.getElementById('profile-delete-button');
+    if (deleteButton) {
+        ul.removeChild(deleteButton);
+    }
+    if (!document.getElementById('profile-changepw')) {
+        ul.appendChild(editpassword);
+    }
+}
 
 /* exported deleteAccount, editPassword */
 function deleteAccount() {

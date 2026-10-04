@@ -12,10 +12,17 @@ form.addEventListener('submit', function(e) {
 function handleChange(newPW, confirmPW) {
     if (newPW != confirmPW) {
         handleMismatch();
-    } else {
-        const user = JSON.parse(sessionStorage.getItem("user"));
-        updatePassword(newPW, user.id);
+        return;
     }
+
+    const stored = JSON.parse(sessionStorage.getItem("user") || "null");
+    const userId = sessionStorage.getItem("userId") || (stored && (stored.id || stored.user_id));
+    if (!userId) {
+        alert("Sign in again to change your password");
+        return;
+    }
+
+    updatePassword(newPW, userId);
 }
 
 function handleMismatch() {
@@ -35,11 +42,12 @@ async function updatePassword(newPW, uId) {
             })
         });
 
+        const update = await response.json().catch(() => ({}));
         if (!response.ok) {
-            console.log("Failed to update password");
+            alert(update.error || "Failed to update password");
+            return;
         }
 
-        const update = await response.json();
         console.log("Password updated: ", update);
         alert("Password Changed");
         window.location.href = "profile.html";
