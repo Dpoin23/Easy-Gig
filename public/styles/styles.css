@@ -665,7 +665,12 @@ select:focus-visible {
 }
 
 .mypostsbutton {
-    width: 150px;
+    width: auto;
+    min-width: 150px;
+    height: auto;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 16px;
 }
 
 .myposts {
