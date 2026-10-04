@@ -10,12 +10,13 @@
 
 <body class="signout-body">
     <div class="Header" id="header">
-        <div class="Header-image"><a href="index.html"><img src="images/Logo.png" width="130" height="48"/></a></div>
+        <div class="Header-image"><a href="index.html"><img src="images/Logo.png" width="130" height="48" alt="Easy Gig"/></a></div>
         <div class="Header-obj"><a href="index.html">Home</a></div>
         <div class="Header-obj"><a href="post.html">Post</a></div>
-        <div class="Header-obj"><a href="createacc.html">Create Account</a></div>
-        <div class="Header-obj"><a href="profile.html">Profile</a></div>
-        <div class="Header-obj"><a href="signout.html">Sign Out</a></div>
+        <div class="Header-account" id="account-menu">
+            <button type="button" class="account-toggle" id="account-toggle" aria-expanded="false" aria-haspopup="true" aria-controls="account-panel">Account</button>
+            <div class="account-panel" id="account-panel" hidden></div>
+        </div>
     </div>
 
     <hr class="topline"/>
@@ -27,12 +28,8 @@
         </form>
     </div>
 
+    <script src="javascript/updateHeaderScript.js"></script>
     <script>
-        function signout() {
-            sessionStorage.setItem("signedIn", "false");
-            sessionStorage.setItem('mypostsdisplay', 'false');
-        }
-
         const form = document.getElementById("signout-form");
         form.addEventListener("submit", function(e) {
             e.preventDefault();

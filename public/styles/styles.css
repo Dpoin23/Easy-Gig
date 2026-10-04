@@ -112,6 +112,64 @@ a {
     text-decoration: none;
 }
 
+.Header-account {
+    position: relative;
+    margin: 4px 2px;
+}
+
+.account-toggle {
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.22s var(--ease), color 0.22s var(--ease), transform 0.22s var(--ease);
+}
+
+.account-toggle:hover,
+.account-toggle[aria-expanded="true"] {
+    background-color: var(--ink);
+    color: var(--surface);
+    transform: translateY(-2px);
+}
+
+.account-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lift);
+    z-index: 20;
+}
+
+.account-panel[hidden] {
+    display: none;
+}
+
+.account-panel a {
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.account-panel a:hover {
+    background-color: var(--ink);
+    color: var(--surface);
+}
+
 .Header .Header-links > a.Header-obj:has(img) {
     background: transparent;
     padding: 6px;
@@ -695,9 +753,15 @@ select:focus-visible {
 
 @media (max-width: 700px) {
     .Header > .Header-obj,
-    .Header .Header-links > a.Header-obj {
+    .Header .Header-links > a.Header-obj,
+    .account-toggle {
         font-size: 16px;
         padding: 12px 10px;
+    }
+
+    .account-panel {
+        left: auto;
+        right: 0;
     }
 
     .Header img {
@@ -818,6 +882,8 @@ select:focus-visible {
     .Header-image a:hover,
     .Header > .Header-obj:hover,
     .Header .Header-links > a.Header-obj:hover,
+    .account-toggle:hover,
+    .account-panel a:hover,
     .search-button:hover,
     .display-input-button:hover,
     .mypostsbutton:hover,

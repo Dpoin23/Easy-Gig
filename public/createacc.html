@@ -11,11 +11,13 @@
 
 <body class="createacc-body">
     <div class="Header" id="header">
-        <div class="Header-image"><a href="index.html"><img src="images/Logo.png" width="130" height="48"/></a></div>
+        <div class="Header-image"><a href="index.html"><img src="images/Logo.png" width="130" height="48" alt="Easy Gig"/></a></div>
         <div class="Header-obj"><a href="index.html">Home</a></div>
         <div class="Header-obj"><a href="post.html">Post</a></div>
-        <div class="Header-obj" id="signin-link"><a href="signin.html">Sign In</a></div>
-        <div class="Header-obj"><a href="createacc.html">Create Account</a></div>
+        <div class="Header-account" id="account-menu">
+            <button type="button" class="account-toggle" id="account-toggle" aria-expanded="false" aria-haspopup="true" aria-controls="account-panel">Account</button>
+            <div class="account-panel" id="account-panel" hidden></div>
+        </div>
     </div>
 
     <hr class="topline"/>
