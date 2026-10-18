@@ -22,6 +22,7 @@ const { dbConfig, databaseName } = require('../lib/dbConfig');
 const { placesConfigured, autocomplete } = require('../lib/places');
 const { POST_LOCATION_COLUMNS } = require('../lib/postLocation');
 const { resolveGigLocation, INSERT_POST_SQL, insertPostParams } = require('../lib/resolveLocation');
+const { CREATE_CONVERSATIONS_SQL, CREATE_MESSAGES_SQL } = require('../lib/messages');
 
 const DEMO_PASSWORD = 'password123';
 
@@ -118,6 +119,8 @@ async function ensureSchema(conn) {
         KEY sessions_user (user_id),
         KEY sessions_expiry (expires_at)
     )`);
+    await conn.query(CREATE_CONVERSATIONS_SQL);
+    await conn.query(CREATE_MESSAGES_SQL);
 
     await ensureColumn(conn, 'users', 'salt', 'VARCHAR(255)');
     await ensureColumn(conn, 'posts', 'user_id', 'INT');

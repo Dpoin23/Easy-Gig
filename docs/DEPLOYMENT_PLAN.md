@@ -107,9 +107,29 @@ CREATE TABLE IF NOT EXISTS sessions (
   KEY sessions_user (user_id),
   KEY sessions_expiry (expires_at)
 );
+CREATE TABLE IF NOT EXISTS conversations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT NOT NULL,
+  poster_id INT NOT NULL,
+  worker_id INT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_message_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY one_thread_per_post_worker (post_id, worker_id),
+  KEY poster_recent (poster_id, last_message_at),
+  KEY worker_recent (worker_id, last_message_at)
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id INT NOT NULL,
+  sender_id INT NOT NULL,
+  body VARCHAR(2000) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  read_at DATETIME NULL,
+  KEY convo_order (conversation_id, id)
+);
 ```
 
-`server.js` also creates `sessions` on startup if it is missing. The table holds a SHA-256 hash of each cookie token, never the token itself. Sessions last seven days; expired rows are removed on the next sign-in.
+`server.js` also creates `sessions`, `conversations`, and `messages` on startup if they are missing. The sessions table holds a SHA-256 hash of each cookie token, never the token itself. Sessions last seven days; expired rows are removed on the next sign-in.
 
 `UNIQUE` on `email` is required so two accounts cannot share one address. The app does not enforce that today.
 
