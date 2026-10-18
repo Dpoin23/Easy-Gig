@@ -86,6 +86,11 @@ describe('postLocation', () => {
         assert.ok(!('address_formatted' in publicView));
         assert.ok(!('address_lat' in publicView));
         assert.ok(!('current_bidder_id' in publicView));
+        assert.ok(!('bid_count' in publicView));
+
+        const owner = publicPostView({ ...seattle, bid_count: 2 }, 10);
+        assert.equal(owner.bid_count, 2);
+        assert.equal(owner.current_bidder_id, 22);
 
         const hired = publicPostView({ ...seattle, accepted_user_id: 22 }, 22);
         assert.equal(hired.precise_address, '123 Pike St, Seattle, WA 98101');

@@ -137,6 +137,14 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
 
     await conn.beginTransaction();
     try {
+        if (tables.has('bids') && (postIds.length > 0 || userIds.length > 0)) {
+            if (postIds.length > 0) {
+                await conn.query('DELETE FROM bids WHERE post_id IN (?)', [postIds]);
+            }
+            if (userIds.length > 0) {
+                await conn.query('DELETE FROM bids WHERE user_id IN (?)', [userIds]);
+            }
+        }
         if (postIds.length > 0) {
             await conn.query('DELETE FROM posts WHERE id IN (?)', [postIds]);
         }

@@ -17,6 +17,14 @@ const {
     ensurePostsLocationColumns,
 } = require('./lib/postLocation');
 const { resolveGigLocation, INSERT_POST_SQL, insertPostParams } = require('./lib/resolveLocation');
+const {
+    validateBidAmount,
+    leadingBid,
+    lowestOtherAmount,
+    bidsForPoster,
+    profileGigs,
+    ensureBidsTable,
+} = require('./lib/bids');
 const { dbConfig } = require('./lib/dbConfig');
 const {
     SESSION_TTL_SECONDS,
@@ -77,8 +85,14 @@ db.connect((err) => {
                     console.error('Could not update posts location columns:', columnsErr.message);
                     return;
                 }
-                dbReady = true;
-                console.log('mysql connected to easy_gig');
+                ensureBidsTable(db, (bidsErr) => {
+                    if (bidsErr) {
+                        console.error('Could not create bids table:', bidsErr.message);
+                        return;
+                    }
+                    dbReady = true;
+                    console.log('mysql connected to easy_gig');
+                });
             });
         }
     );
@@ -116,6 +130,7 @@ for (const path of [
     '/api/addpost',
     '/api/updatecurrentbid',
     '/api/acceptbid',
+    '/api/bidders',
     '/api/updateuser',
     '/api/deletepostbyid',
     '/api/deleteaccountbyid',
@@ -133,6 +148,7 @@ for (const path of [
     '/api/getpostsbypay',
     '/api/getpostsbyuserid',
     '/api/posts',
+    '/api/bidders',
 ]) {
     app.use(path, readLimiter);
 }
@@ -208,6 +224,7 @@ for (const path of [
     '/api/addpost',
     '/api/updatecurrentbid',
     '/api/acceptbid',
+    '/api/bidders',
     '/api/updateuser',
     '/api/updatePassword',
     '/api/deletepostbyid',
@@ -701,7 +718,10 @@ app.get('/api/getpostsbyuserid', (req, res) => {
 
     runQuery(
         res,
-        'SELECT * FROM posts WHERE user_id = ?',
+        `SELECT posts.*,
+            (SELECT COUNT(*) FROM bids WHERE bids.post_id = posts.id) AS bid_count
+         FROM posts
+         WHERE user_id = ?`,
         [userId],
         (result) => {
             res.json(redactPosts(result, req.userId));
@@ -759,6 +779,34 @@ app.get('/updatepost/:id', (req, res) => {
     );
 });
 
+function refreshLeadingBid(res, postId, onDone) {
+    runQuery(
+        res,
+        'SELECT id, user_id, amount FROM bids WHERE post_id = ?',
+        [postId],
+        (rows) => {
+            const lead = leadingBid(rows);
+            runQuery(
+                res,
+                'UPDATE posts SET current_bid = ?, current_bidder_id = ? WHERE id = ? AND accepted_user_id IS NULL',
+                [lead ? lead.amount : 0, lead ? lead.user_id : null, postId],
+                () => onDone()
+            );
+        }
+    );
+}
+
+function refreshLeadingBids(res, postIds, onDone) {
+    const next = (index) => {
+        if (index >= postIds.length) {
+            onDone();
+            return;
+        }
+        refreshLeadingBid(res, postIds[index], () => next(index + 1));
+    };
+    next(0);
+}
+
 app.put('/api/updatecurrentbid/:id', (req, res) => {
     const body = req.body || {};
     const postId = readField(res, idField(req.params.id, 'Post'));
@@ -785,28 +833,174 @@ app.put('/api/updatecurrentbid/:id', (req, res) => {
 
         runQuery(
             res,
-            'UPDATE posts SET current_bid = ?, current_bidder_id = ? WHERE id = ?',
-            [bid, req.userId, postId],
-            (result) => {
-                res.json({
-                    ok: true,
-                    affectedRows: result.affectedRows,
-                    location: post.location,
-                    address_shared_when: post.address_formatted
-                        ? post.address_visibility === 'public'
-                            ? 'now'
-                            : 'after_hire'
-                        : null,
+            'SELECT id, user_id, amount FROM bids WHERE post_id = ?',
+            [postId],
+            (existing) => {
+                const own = existing.find((row) => Number(row.user_id) === Number(req.userId));
+                const decision = validateBidAmount({
+                    maxPay: post.max_pay,
+                    amount: bid,
+                    lowestOtherBid: lowestOtherAmount(existing, req.userId),
+                    ownBid: own ? own.amount : null,
                 });
+                if (decision.error) {
+                    sendError(res, 400, decision.error);
+                    return;
+                }
+
+                runQuery(
+                    res,
+                    `INSERT INTO bids (post_id, user_id, amount) VALUES (?, ?, ?)
+                     ON DUPLICATE KEY UPDATE amount = VALUES(amount)`,
+                    [postId, req.userId, decision.value],
+                    () => {
+                        refreshLeadingBid(res, postId, () => {
+                            res.json({
+                                ok: true,
+                                amount: decision.value,
+                                location: post.location,
+                                address_shared_when: post.address_formatted
+                                    ? post.address_visibility === 'public'
+                                        ? 'now'
+                                        : 'after_hire'
+                                    : null,
+                            });
+                        });
+                    }
+                );
             }
         );
     });
 });
 
-app.put('/api/acceptbid/:id', (req, res) => {
+app.get('/api/posts/:id/bids', (req, res) => {
     const postId = readField(res, idField(req.params.id, 'Post'));
     if (postId == null) {
         return;
+    }
+
+    runQuery(
+        res,
+        'SELECT id, user_id, accepted_user_id, title FROM posts WHERE id = ? AND user_id = ?',
+        [postId, req.userId],
+        (posts) => {
+            if (posts.length === 0) {
+                sendError(res, 404, 'Post not found');
+                return;
+            }
+
+            const post = posts[0];
+            runQuery(
+                res,
+                `SELECT bids.id, bids.user_id, bids.amount, bids.created_at, users.name
+                 FROM bids
+                 INNER JOIN users ON users.id = bids.user_id
+                 WHERE bids.post_id = ?`,
+                [postId],
+                (bids) => {
+                    res.json({
+                        post_id: postId,
+                        title: post.title,
+                        accepted_user_id: post.accepted_user_id || null,
+                        bids: bidsForPoster(bids, post.accepted_user_id),
+                    });
+                }
+            );
+        }
+    );
+});
+
+app.get('/api/bidders/:userId', (req, res) => {
+    const bidderId = readField(res, idField(req.params.userId, 'Bidder'));
+    const postId = readField(res, idField(req.query.post_id, 'Post'));
+    if (bidderId == null || postId == null) {
+        return;
+    }
+
+    runQuery(
+        res,
+        'SELECT id, user_id, title, accepted_user_id FROM posts WHERE id = ? AND user_id = ?',
+        [postId, req.userId],
+        (posts) => {
+            if (posts.length === 0) {
+                sendError(res, 404, 'Post not found');
+                return;
+            }
+
+            const post = posts[0];
+            runQuery(
+                res,
+                `SELECT bids.id, bids.amount, bids.created_at, users.name
+                 FROM bids
+                 INNER JOIN users ON users.id = bids.user_id
+                 WHERE bids.post_id = ? AND bids.user_id = ?`,
+                [postId, bidderId],
+                (bids) => {
+                    if (bids.length === 0) {
+                        sendError(res, 404, 'That person has not bid on this gig');
+                        return;
+                    }
+
+                    const bid = bids[0];
+                    runQuery(
+                        res,
+                        'SELECT * FROM posts WHERE user_id = ? ORDER BY id DESC',
+                        [bidderId],
+                        (posted) => {
+                            runQuery(
+                                res,
+                                'SELECT * FROM posts WHERE accepted_user_id = ? ORDER BY id DESC',
+                                [bidderId],
+                                (selected) => {
+                                    res.json({
+                                        id: bidderId,
+                                        name: bid.name,
+                                        post_id: postId,
+                                        post_title: post.title,
+                                        can_hire: !post.accepted_user_id,
+                                        hired: Number(post.accepted_user_id) === Number(bidderId),
+                                        bid: {
+                                            id: bid.id,
+                                            amount: Number(bid.amount),
+                                            created_at: bid.created_at,
+                                        },
+                                        posted_gigs: profileGigs(posted, req.userId),
+                                        selected_gigs: profileGigs(selected, req.userId),
+                                    });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
+});
+
+app.get('/api/me/selected', (req, res) => {
+    runQuery(
+        res,
+        'SELECT * FROM posts WHERE accepted_user_id = ? ORDER BY id DESC',
+        [req.userId],
+        (rows) => {
+            res.json(profileGigs(rows, req.userId));
+        }
+    );
+});
+
+app.put('/api/acceptbid/:id', (req, res) => {
+    const body = req.body || {};
+    const postId = readField(res, idField(req.params.id, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
+    let chosenUserId = null;
+    if (body.user_id != null && body.user_id !== '') {
+        chosenUserId = readField(res, idField(body.user_id, 'Bidder'));
+        if (chosenUserId == null) {
+            return;
+        }
     }
 
     runQuery(
@@ -820,24 +1014,46 @@ app.put('/api/acceptbid/:id', (req, res) => {
             }
 
             const post = rows[0];
-            if (!post.current_bidder_id) {
-                sendError(res, 400, 'This gig does not have a bidder to hire');
-                return;
-            }
             if (post.accepted_user_id) {
                 sendError(res, 409, 'This gig already has a hired worker');
                 return;
             }
 
+            const targetUserId = chosenUserId || post.current_bidder_id;
+            if (!targetUserId) {
+                sendError(res, 400, 'This gig does not have a bidder to hire');
+                return;
+            }
+
             runQuery(
                 res,
-                'UPDATE posts SET accepted_user_id = ? WHERE id = ? AND user_id = ?',
-                [post.current_bidder_id, postId, req.userId],
-                () => {
-                    res.json({
-                        ok: true,
-                        accepted_user_id: post.current_bidder_id,
-                    });
+                'SELECT id, user_id, amount FROM bids WHERE post_id = ? AND user_id = ?',
+                [postId, targetUserId],
+                (bids) => {
+                    if (bids.length === 0) {
+                        sendError(res, 404, 'That person has not bid on this gig');
+                        return;
+                    }
+
+                    const bid = bids[0];
+                    runQuery(
+                        res,
+                        `UPDATE posts
+                         SET accepted_user_id = ?, current_bidder_id = ?, current_bid = ?
+                         WHERE id = ? AND user_id = ? AND accepted_user_id IS NULL`,
+                        [bid.user_id, bid.user_id, bid.amount, postId, req.userId],
+                        (result) => {
+                            if (result.affectedRows === 0) {
+                                sendError(res, 409, 'This gig already has a hired worker');
+                                return;
+                            }
+                            res.json({
+                                ok: true,
+                                accepted_user_id: bid.user_id,
+                                amount: Number(bid.amount),
+                            });
+                        }
+                    );
                 }
             );
         }
@@ -938,35 +1154,73 @@ app.delete('/api/deletepostbyid', (req, res) => {
 
     runQuery(
         res,
-        'DELETE FROM posts WHERE id = ? AND user_id = ?',
+        'SELECT id FROM posts WHERE id = ? AND user_id = ?',
         [postId, req.userId],
-        (result) => {
-            if (result.affectedRows === 0) {
+        (posts) => {
+            if (posts.length === 0) {
                 sendError(res, 404, 'Post not found');
                 return;
             }
-            res.json(result);
+            runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
+                runQuery(
+                    res,
+                    'DELETE FROM posts WHERE id = ? AND user_id = ?',
+                    [postId, req.userId],
+                    (result) => {
+                        res.json(result);
+                    }
+                );
+            });
         }
     );
 });
 
 app.delete('/api/deleteaccountbyid', (req, res) => {
     const userId = req.userId;
-    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], () => {
-        runQuery(res, 'DELETE FROM sessions WHERE user_id = ?', [userId], () => {
-            runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
-                res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
-                res.json(result);
+    runQuery(
+        res,
+        'SELECT DISTINCT post_id FROM bids WHERE user_id = ?',
+        [userId],
+        (bidPosts) => {
+            const postIds = bidPosts.map((row) => row.post_id);
+            runQuery(res, 'DELETE FROM bids WHERE user_id = ?', [userId], () => {
+                runQuery(
+                    res,
+                    `DELETE bids FROM bids
+                     INNER JOIN posts ON posts.id = bids.post_id
+                     WHERE posts.user_id = ?`,
+                    [userId],
+                    () => {
+                        runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], () => {
+                            refreshLeadingBids(res, postIds, () => {
+                                runQuery(res, 'DELETE FROM sessions WHERE user_id = ?', [userId], () => {
+                                    runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
+                                        res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+                                        res.json(result);
+                                    });
+                                });
+                            });
+                        });
+                    }
+                );
             });
-        });
-    });
+        }
+    );
 });
 
 app.delete('/api/deletealluserposts', (req, res) => {
-    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [req.userId], (result) => {
-        console.log(result);
-        res.json(result);
-    });
+    runQuery(
+        res,
+        `DELETE bids FROM bids
+         INNER JOIN posts ON posts.id = bids.post_id
+         WHERE posts.user_id = ?`,
+        [req.userId],
+        () => {
+            runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [req.userId], (result) => {
+                res.json(result);
+            });
+        }
+    );
 });
 
 app.get('/deletepost/:id', (req, res) => {
@@ -975,9 +1229,11 @@ app.get('/deletepost/:id', (req, res) => {
         return;
     }
 
-    runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
-        console.log(result);
-        res.send('post1 deleted');
+    runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
+        runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
+            console.log(result);
+            res.send('post1 deleted');
+        });
     });
 });
 
