@@ -10,15 +10,14 @@ const { rankPosts } = require('./lib/searchRank');
 const { findMatchingUser } = require('./lib/passwords');
 const { placesConfigured, autocomplete, placeDetails } = require('./lib/places');
 const {
-    DEFAULT_VISIBILITY,
     publicLabel,
-    assertUsableArea,
     publicPostView,
     redactPosts,
     filterByRadius,
-    addressFitsArea,
     ensurePostsLocationColumns,
 } = require('./lib/postLocation');
+const { resolveGigLocation, INSERT_POST_SQL, insertPostParams } = require('./lib/resolveLocation');
+const { dbConfig } = require('./lib/dbConfig');
 const {
     SESSION_TTL_SECONDS,
     newSessionToken,
@@ -49,12 +48,7 @@ let dbReady = false;
 const secureCookies = process.env.NODE_ENV === 'production';
 
 // Connect
-var db = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'Nextgen#23',
-   database: 'easy_gig'
-});
+var db = mysql.createConnection(dbConfig());
 
 db.connect((err) => {
     if (err) {
@@ -484,79 +478,30 @@ app.post('/api/addpost', async (req, res) => {
     }
 
     try {
-        const areaPlace = await placeDetails(areaPlaceId, areaSessionToken);
-        const areaKind = assertUsableArea(areaPlace);
-        if (areaKind.error) {
-            sendError(res, 400, areaKind.error);
+        const resolved = await resolveGigLocation({
+            areaPlaceId,
+            areaSessionToken,
+            addressPlaceId,
+            addressSessionToken,
+            addressVisibility,
+        });
+        if (resolved.error) {
+            sendError(res, 400, resolved.error);
             return;
         }
 
-        if (areaKind.value === 'street') {
-            sendError(
-                res,
-                400,
-                'Choose a city or neighborhood for the service area. You can add the street address separately.'
-            );
-            return;
-        }
-
-        let addressPlace = null;
-        if (addressPlaceId) {
-            addressPlace = await placeDetails(addressPlaceId, addressSessionToken);
-            if (!addressPlace.formattedAddress) {
-                sendError(res, 400, 'Choose a specific address from the suggestions');
-                return;
-            }
-        }
-
-        if (addressPlace && !addressFitsArea(areaPlace, addressPlace)) {
-            sendError(res, 400, 'That address is too far from the selected city or service area');
-            return;
-        }
-
-        const location = publicLabel(areaPlace);
-        if (!location) {
-            sendError(res, 400, 'Choose a city or service area from the suggestions');
-            return;
-        }
-
-        const visibility = addressPlace ? addressVisibility : DEFAULT_VISIBILITY;
-
+        const { location, address, visibility } = resolved.value;
         runQuery(
             res,
-            `INSERT INTO posts (
-                title, description, location, max_pay, type_of_pay, user_id,
-                place_id, locality, neighborhood, admin_area, country, postal_code, lat, lng,
-                address_place_id, address_formatted, address_lat, address_lng, address_visibility
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                title,
-                description,
-                location,
-                pay,
-                payType,
-                req.userId,
-                areaPlace.placeId,
-                areaPlace.locality || null,
-                areaPlace.neighborhood || null,
-                areaPlace.admin_area || null,
-                areaPlace.country || null,
-                areaPlace.postal_code || null,
-                areaPlace.lat,
-                areaPlace.lng,
-                addressPlace ? addressPlace.placeId : null,
-                addressPlace ? addressPlace.formattedAddress : null,
-                addressPlace ? addressPlace.lat : null,
-                addressPlace ? addressPlace.lng : null,
-                visibility,
-            ],
+            INSERT_POST_SQL,
+            insertPostParams({ title, description, pay, payType, userId: req.userId }, resolved.value),
             (result) => {
                 res.json({
                     ok: true,
                     insertId: result.insertId,
                     location,
                     address_visibility: visibility,
-                    has_precise_address: Boolean(addressPlace),
+                    has_precise_address: Boolean(address),
                 });
             }
         );
