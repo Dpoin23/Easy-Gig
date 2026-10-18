@@ -11,8 +11,8 @@ A person who is not on the developer machine can:
 
 1. Open the site over HTTPS.
 2. Create an account and sign in again later.
-3. Post a gig (title, description, location, pay, pay type).
-4. Search by title, location, pay type, or pay and see that post.
+3. Post a gig (title, description, Google Places city/area, optional street address, pay, pay type).
+4. Search by title, location (city or distance), pay type, or pay and see that post.
 5. Come back the next day and find the same account and posts.
 
 That needs a long-running Node process, a MySQL instance that survives restarts, a domain with TLS, and the fixes in the next section. Without those fixes the URL can load and still be unsafe to hand to strangers.
@@ -58,6 +58,7 @@ Environment variables the app needs once the hardcoded connection is removed:
 | `MYSQL_USER` | `easy_gig` |
 | `MYSQL_PASSWORD` | from the host secret store |
 | `MYSQL_DATABASE` | `easy_gig` |
+| `GOOGLE_PLACES_API_KEY` | server-side Places API (New) key; see [GOOGLE_PLACES.md](./GOOGLE_PLACES.md) |
 
 ## Schema to apply once
 
@@ -81,7 +82,22 @@ CREATE TABLE IF NOT EXISTS posts (
   location VARCHAR(255) NOT NULL,
   max_pay DECIMAL(8, 2) NOT NULL,
   type_of_pay VARCHAR(255) NOT NULL,
-  current_bid DECIMAL(8, 2) DEFAULT 0
+  current_bid DECIMAL(8, 2) DEFAULT 0,
+  place_id VARCHAR(255),
+  locality VARCHAR(255),
+  neighborhood VARCHAR(255),
+  admin_area VARCHAR(64),
+  country VARCHAR(64),
+  postal_code VARCHAR(32),
+  lat DECIMAL(10, 7),
+  lng DECIMAL(10, 7),
+  address_place_id VARCHAR(255),
+  address_formatted VARCHAR(512),
+  address_lat DECIMAL(10, 7),
+  address_lng DECIMAL(10, 7),
+  address_visibility VARCHAR(32) NOT NULL DEFAULT 'after_hire',
+  current_bidder_id INT,
+  accepted_user_id INT
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash CHAR(64) NOT NULL PRIMARY KEY,

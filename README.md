@@ -23,6 +23,8 @@ Requires MySQL with database `easy_gig` (see connection settings in `server.js`)
 
 Sign-in sets an httpOnly `eg_session` cookie. Posting, bidding, profile edits, password changes, and deletes use the signed-in user from that cookie. `server.js` creates the `sessions` table on startup if it is missing.
 
+Posting a gig requires a real city, neighborhood, or ZIP from Google Places, not typed-in free text. A street address is optional and hidden until the poster hires a bidder unless they choose to show it on the listing. Location search can use a city name, a selected place, or (if the user opts in) the current device location, plus a 5 / 10 / 25 / 50 mile filter. Precise addresses are stripped from public API responses. Google setup is in [docs/GOOGLE_PLACES.md](docs/GOOGLE_PLACES.md).
+
 Search matches part of a title, location, pay type, or pay amount. Closer matches are listed first. Posts that only overlap in another field, or pay amounts nearby, appear below a Related searches line.
 
 ```bash
