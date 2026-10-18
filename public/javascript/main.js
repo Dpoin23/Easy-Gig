@@ -92,6 +92,10 @@ async function updateBid(post, bid) {
             body: JSON.stringify({ current_bid: bid })
         });
 
+        if (response.status === 401) {
+            alert('Sign in to place a bid.');
+            return;
+        }
         if (!response.ok) {
             throw new Error('failed to update bid');
         }

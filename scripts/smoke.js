@@ -110,7 +110,24 @@ async function main() {
       throw new Error(`auth rate limit expected 10, got ${badJson.headers['ratelimit-limit']}`);
     }
 
-    console.log(`smoke ok: /=${home.statusCode} api=${api.statusCode} badJson=${badJson.statusCode}`);
+    const noSession = [
+      ['GET', '/api/me'],
+      ['POST', '/api/addpost'],
+      ['PUT', '/api/updatecurrentbid/1'],
+      ['PUT', '/api/updateuser'],
+      ['PUT', '/api/updatePassword'],
+      ['DELETE', '/api/deletepostbyid'],
+      ['DELETE', '/api/deleteaccountbyid'],
+      ['DELETE', '/api/deletealluserposts'],
+    ];
+    for (const [method, pathname] of noSession) {
+      const anon = await request(pathname, { method });
+      if (anon.statusCode !== 401) {
+        throw new Error(`${method} ${pathname} without a session expected 401, got ${anon.statusCode}`);
+      }
+    }
+
+    console.log(`smoke ok: /=${home.statusCode} api=${api.statusCode} badJson=${badJson.statusCode} noSession=401`);
   } catch (err) {
     failed = true;
     console.error('smoke failed:', err.message);

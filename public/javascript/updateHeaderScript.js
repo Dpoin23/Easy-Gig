@@ -4,9 +4,17 @@ function signin() {
     sessionStorage.setItem('mypostsdisplay', 'false');
 }
 
-function signout() {
+function clearSignedIn() {
     sessionStorage.setItem("signedIn", "false");
     sessionStorage.setItem('mypostsdisplay', 'false');
+    sessionStorage.removeItem('user');
+}
+
+function signout() {
+    clearSignedIn();
+    return fetch('/api/signout', { method: 'POST' }).catch(function(error) {
+        console.error(error);
+    });
 }
 
 function accountItems(signedIn) {
@@ -32,10 +40,9 @@ function closeAccountMenu(panel, toggle) {
     toggle.setAttribute('aria-expanded', 'false');
 }
 
-function renderAccountMenu(signedIn) {
+function renderAccountItems(signedIn) {
     const panel = document.getElementById('account-panel');
-    const toggle = document.getElementById('account-toggle');
-    if (!panel || !toggle) {
+    if (!panel) {
         return;
     }
 
@@ -46,6 +53,14 @@ function renderAccountMenu(signedIn) {
         link.textContent = item.label;
         panel.appendChild(link);
     });
+}
+
+function bindAccountMenu() {
+    const panel = document.getElementById('account-panel');
+    const toggle = document.getElementById('account-toggle');
+    if (!panel || !toggle) {
+        return;
+    }
 
     toggle.addEventListener('click', function(event) {
         event.stopPropagation();
@@ -67,5 +82,27 @@ function renderAccountMenu(signedIn) {
     });
 }
 
-const signedIn = sessionStorage.getItem("signedIn") === "true";
-renderAccountMenu(signedIn);
+async function syncSession() {
+    try {
+        const response = await fetch('/api/me');
+        if (response.status === 401) {
+            clearSignedIn();
+            renderAccountItems(false);
+            return;
+        }
+        if (!response.ok) {
+            return;
+        }
+
+        const user = await response.json();
+        sessionStorage.setItem("signedIn", "true");
+        sessionStorage.setItem('user', JSON.stringify(user));
+        renderAccountItems(true);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+renderAccountItems(sessionStorage.getItem("signedIn") === "true");
+bindAccountMenu();
+syncSession();

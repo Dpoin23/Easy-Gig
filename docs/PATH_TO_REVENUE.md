@@ -20,11 +20,10 @@ Charge for something the board already almost does: getting a gig seen, then get
 
 Do this before Stripe. A paid post on an open write API will be refunded or abused.
 
-- Server session (httpOnly cookie). Stop trusting `userId` from the browser on update, delete, bid, and password change.
-- Stop returning `salt` from `/api/signin`.
+- Done: server session in an httpOnly `eg_session` cookie. Post, bid, profile, password, and delete routes take the user from the session, not the request body. `/api/signin` no longer returns `salt`. Changing a password signs out the user's other sessions.
 - Unique email, and reject a second signup for the same address.
-- Remove or lock the maintenance routes listed in the deployment plan.
-- Poster can edit and delete only their own posts. A bid stores the bidding user's id.
+- Remove or lock the maintenance routes listed in the deployment plan. Until then they bypass the session checks.
+- Poster can delete only their own posts (done through `/api`). Editing a post and storing the bidding user's id on a bid are still to do.
 - Report control: a signed-in user can flag a post; an admin flag hides it from search. One admin account is enough at the start.
 - Terms and a privacy note linked from sign-up, including that Easy Gig is a board and does not employ the worker.
 

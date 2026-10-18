@@ -3,8 +3,7 @@ Profile Box Section
 */
 localStorage.setItem('editing', 'false');
 localStorage.setItem('PW', 'false');
-const userId = sessionStorage.getItem('userId');
-const userData = JSON.parse(sessionStorage.getItem("user"));
+let userId = null;
 const profileBox = document.getElementById('profile-box');
 profileBox.innerHTML = `<form id="edit-profile-form">
                             <ul class="createacc-ul" id="profile-ul">
@@ -23,8 +22,30 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                 </li>
                             </ul>
                         </form>`;
-document.getElementById('name-li').textContent = userData.name;
-document.getElementById('email-li').textContent = userData.email;
+loadProfile();
+
+async function loadProfile() {
+    try {
+        const response = await fetch('/api/me');
+        if (response.status === 401) {
+            sessionStorage.setItem('signedIn', 'false');
+            window.location.href = 'signin.html';
+            return;
+        }
+        if (!response.ok) {
+            alert('Could not load your profile');
+            return;
+        }
+
+        const user = await response.json();
+        userId = user.id;
+        sessionStorage.setItem('user', JSON.stringify(user));
+        document.getElementById('name-li').textContent = user.name;
+        document.getElementById('email-li').textContent = user.email;
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const editForm = document.getElementById('edit-profile-form');
 editForm.addEventListener('submit', function(event) {
@@ -61,8 +82,7 @@ editForm.addEventListener('submit', function(event) {
         const data = new FormData(this);
         const newData = {
             name: data.get('name'),
-            email: data.get('email'),
-            user_id: userId
+            email: data.get('email')
         };
         const unchanged = newData.name == newUserData.name && newData.email == newUserData.email;
 
@@ -95,7 +115,6 @@ editForm.addEventListener('submit', function(event) {
                 email: newData.email
             };
             sessionStorage.setItem('user', JSON.stringify(savedUser));
-            sessionStorage.setItem('userId', String(savedUser.id));
             localStorage.setItem('editing', 'false');
             showProfileSummary(savedUser.name, savedUser.email);
             alert('saved');
@@ -147,13 +166,7 @@ function showProfileSummary(name, email) {
 /* exported deleteAccount, editPassword */
 function deleteAccount() {
     alert('deleting account. . .');
-    fetch('/api/deleteaccountbyid', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userId })
-    })
+    fetch('/api/deleteaccountbyid', { method: 'DELETE' })
     .then(response => {
         if(!response.ok) {
             console.error('Status: ', response.status);
@@ -163,7 +176,6 @@ function deleteAccount() {
     .then(data => {
         console.log('Delete successful: ', data);
         deleteSignout();
-        deleteUsersPosts(userId);
     })
     .catch(err => {
         console.error(err);
@@ -173,6 +185,7 @@ function deleteAccount() {
 function deleteSignout() {
     sessionStorage.setItem("signedIn", "false");
     sessionStorage.setItem('mypostsdisplay', 'false');
+    sessionStorage.removeItem('user');
     window.location.href = "index.html";
 }
 
@@ -309,26 +322,4 @@ async function deletePost(post_id, box) {
     } catch (err) {
         console.error(err);
     }
-}
-
-function deleteUsersPosts(userId) {
-    fetch('/api/deletealluserposts', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Status: ', response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Posts deleted successfully: ', data);
-    })
-    .catch(error => {
-        console.error(error);
-    }) 
 }

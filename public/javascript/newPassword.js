@@ -15,32 +15,27 @@ function handleChange(newPW, confirmPW) {
         return;
     }
 
-    const stored = JSON.parse(sessionStorage.getItem("user") || "null");
-    const userId = sessionStorage.getItem("userId") || (stored && (stored.id || stored.user_id));
-    if (!userId) {
-        alert("Sign in again to change your password");
-        return;
-    }
-
-    updatePassword(newPW, userId);
+    updatePassword(newPW);
 }
 
 function handleMismatch() {
     alert("Passwords do not match")
 }
 
-async function updatePassword(newPW, uId) {
+async function updatePassword(newPW) {
     try {
         const response = await fetch("/api/updatePassword", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ 
-                newPassword: newPW,
-                userId: uId
-            })
+            body: JSON.stringify({ newPassword: newPW })
         });
+
+        if (response.status === 401) {
+            alert("Sign in again to change your password");
+            return;
+        }
 
         const update = await response.json().catch(() => ({}));
         if (!response.ok) {

@@ -21,6 +21,8 @@ npm run dev          # http://localhost:3000  (override with PORT=3001)
 
 Requires MySQL with database `easy_gig` (see connection settings in `server.js`). Without MySQL, the UI still loads; API calls will fail until the DB is up.
 
+Sign-in sets an httpOnly `eg_session` cookie. Posting, bidding, profile edits, password changes, and deletes use the signed-in user from that cookie. `server.js` creates the `sessions` table on startup if it is missing.
+
 Search matches part of a title, location, pay type, or pay amount. Closer matches are listed first. Posts that only overlap in another field, or pay amounts nearby, appear below a Related searches line.
 
 ```bash

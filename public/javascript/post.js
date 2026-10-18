@@ -5,9 +5,17 @@ form.addEventListener("submit", function(e) {
     const data = new FormData(this);
 
     if (sessionStorage.getItem("signedIn") == "true") {
-        addPostToDB(data.get("title"), data.get("description"), data.get("location"), data.get("payType"), data.get("pay"));
-        e.target.reset();
-        postAdded();
+        const form = e.target;
+        addPostToDB(data.get("title"), data.get("description"), data.get("location"), data.get("payType"), data.get("pay"))
+        .then(status => {
+            if (status === 'ok') {
+                form.reset();
+                postAdded();
+            } else if (status === 'signin') {
+                sessionStorage.setItem("signedIn", "false");
+                requireSignIn();
+            }
+        });
     } else {
         requireSignIn();
     }
@@ -15,17 +23,15 @@ form.addEventListener("submit", function(e) {
 });
 
 function addPostToDB(ti, dsp, loc, pT, p) {
-    const uID = sessionStorage.getItem('userId');
     const data = {
         title: ti,
         description: dsp,
         location: loc,
         pay: p,
-        payType: pT,
-        user_id: uID
+        payType: pT
     };
 
-    fetch('/api/addpost', {
+    return fetch('/api/addpost', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -33,17 +39,21 @@ function addPostToDB(ti, dsp, loc, pT, p) {
         body: JSON.stringify(data)
     })
     .then(response => {
-        
-        if(!response.ok) {
-            console.error('Status: ', response.status);
+        if (response.status === 401) {
+            return 'signin';
         }
-        console.log(response);
-        return response.json();
-
+        if (!response.ok) {
+            console.error('Status: ', response.status);
+            return 'error';
+        }
+        return response.json().then(inserted => {
+            console.log('Data inserted successfully: ', inserted);
+            return 'ok';
+        });
     })
-    .then(data => { console.log('Data inserted successfully: ', data); })
     .catch(error => {
         console.error(error);
+        return 'error';
     });
 }
 

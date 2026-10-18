@@ -42,7 +42,6 @@ function confirmPassword(em, pw) {
             email: em
         };
 
-        sessionStorage.setItem("userId", data.userId);
         sessionStorage.setItem("user", JSON.stringify(user));
         return true;
 

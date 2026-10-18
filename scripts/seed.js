@@ -134,6 +134,16 @@ async function main() {
             PRIMARY KEY (id)
         )`);
 
+        await conn.query(`CREATE TABLE IF NOT EXISTS sessions (
+            token_hash CHAR(64) NOT NULL,
+            user_id INT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            PRIMARY KEY (token_hash),
+            KEY sessions_user (user_id),
+            KEY sessions_expiry (expires_at)
+        )`);
+
         await ensureColumn(conn, 'users', 'salt', 'VARCHAR(255)');
         await ensureColumn(conn, 'posts', 'user_id', 'INT');
         await ensureColumn(conn, 'posts', 'current_bid', 'DECIMAL(8, 2) DEFAULT 0');

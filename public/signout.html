@@ -33,8 +33,9 @@
         const form = document.getElementById("signout-form");
         form.addEventListener("submit", function(e) {
             e.preventDefault();
-            signout();
-            window.location.href = "index.html";
+            signout().then(function() {
+                window.location.href = "index.html";
+            });
         });
     </script>
 </body>

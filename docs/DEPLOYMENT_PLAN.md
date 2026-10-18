@@ -3,7 +3,7 @@
 **Who:** whoever stands the app up so other people can use it.  
 **Why:** Easy Gig runs on one machine today (`npm run dev`, MySQL on `localhost`). A hosted copy has to keep accounts and gigs after the laptop is closed, and it has to stop exposing routes that wipe data.
 
-App shape today: Node `>=20`, Express serving `public/`, MySQL database `easy_gig`. Sign-in stores `userId` in `sessionStorage`. There is no Docker file, no process manager, and database settings are hardcoded in `server.js` and `scripts/seed.js`.
+App shape today: Node `>=20`, Express serving `public/`, MySQL database `easy_gig`. Sign-in sets an httpOnly `eg_session` cookie backed by a `sessions` table; write routes take the user from that session. There is no Docker file, no process manager, and database settings are hardcoded in `server.js` and `scripts/seed.js`.
 
 ## What “hosted and usable” means
 
@@ -24,8 +24,8 @@ These are in the app today. Do them before DNS points at the server.
 | Gap | Why it blocks a public host |
 |-----|-----------------------------|
 | MySQL host, user, and password are hardcoded | The password ships in git. Production needs env vars and a database user that is not `root`. |
-| Open maintenance routes | `GET /createdb`, `GET /deletepost/:id`, `GET /deletespecificpostfortesting`, `DELETE /deleteallusers`, and the other non-`/api` table routes can create or destroy data with no sign-in. Remove them from the process that faces the internet. Keep schema changes in a migration script, not HTTP. |
-| Sign-in is a browser `userId` | `/api/signin` returns `userId` and `salt`. Update, delete, bid, and password-change routes trust an id in the body. Anyone who can guess or read an id can act as that user. Usable for the public means an httpOnly session cookie (or equivalent) checked on every write. |
+| Open maintenance routes | `GET /createdb`, `GET /deletepost/:id`, `GET /updatepost/:id`, `GET /deletespecificpostfortesting`, `DELETE /deleteallusers`, and the other non-`/api` table routes can create or destroy data with no sign-in. They also bypass the session and post-ownership checks on `/api`. Remove them from the process that faces the internet. Keep schema changes in a migration script, not HTTP. |
+| Session cookie needs HTTPS | Set `NODE_ENV=production` so `eg_session` is sent with `Secure`. Without it the cookie works over plain HTTP, which is only acceptable on localhost. |
 | `users` schema and inserts disagree | `GET /createuserstable` does not add `salt`, but `/api/adduser` inserts `salt`. Apply one schema that includes `salt` before the first real signup. |
 | CORS is open (`app.use(cors())`) | Fine while the HTML and API share one origin. Lock it if a separate frontend host is added later. |
 | `SELECT * FROM posts` on every search | Fine for a small board. Add a SQL `WHERE` (and an index on title/location) before the table is large. |
@@ -52,6 +52,7 @@ Environment variables the app needs once the hardcoded connection is removed:
 
 | Variable | Example |
 |----------|---------|
+| `NODE_ENV` | `production` (marks the session cookie `Secure`) |
 | `PORT` | `3000` |
 | `MYSQL_HOST` | `127.0.0.1` |
 | `MYSQL_USER` | `easy_gig` |
@@ -82,7 +83,17 @@ CREATE TABLE IF NOT EXISTS posts (
   type_of_pay VARCHAR(255) NOT NULL,
   current_bid DECIMAL(8, 2) DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  user_id INT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME NOT NULL,
+  KEY sessions_user (user_id),
+  KEY sessions_expiry (expires_at)
+);
 ```
+
+`server.js` also creates `sessions` on startup if it is missing. The table holds a SHA-256 hash of each cookie token, never the token itself. Sessions last seven days; expired rows are removed on the next sign-in.
 
 `UNIQUE` on `email` is required so two accounts cannot share one address. The app does not enforce that today.
 
@@ -100,6 +111,7 @@ Confirm, on the VM:
 
 - `GET /` returns the home page.
 - `POST /api/signin` with a bad body returns 400, not a stack trace.
+- A good sign-in returns `Set-Cookie: eg_session=...; HttpOnly; SameSite=Lax; Secure`, and `GET /api/me` without that cookie returns 401.
 - With MySQL stopped, `/api/*` returns 503 and the HTML still loads.
 - Creating an account, posting, searching, signing out, and signing in again keeps the post.
 
@@ -111,7 +123,6 @@ Then put Caddy or nginx in front, confirm the browser shows a valid certificate,
 
 Not required to be usable, required before charging money or a wide launch. See [PATH_TO_REVENUE.md](./PATH_TO_REVENUE.md).
 
-- Server-side sessions and no `salt` in the sign-in JSON.
 - Email verification and password reset.
 - Unique email enforced in the app as well as the database.
 - Off-box backups and a restore drill.

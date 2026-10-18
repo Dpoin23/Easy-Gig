@@ -6,6 +6,14 @@ const { rateLimit } = require('express-rate-limit');
 const { rankPosts } = require('./lib/searchRank');
 const { findMatchingUser } = require('./lib/passwords');
 const {
+    SESSION_TTL_SECONDS,
+    newSessionToken,
+    hashSessionToken,
+    readSessionToken,
+    sessionCookie,
+    clearSessionCookie,
+} = require('./lib/sessions');
+const {
     textField,
     emailField,
     passwordField,
@@ -17,6 +25,7 @@ const {
 } = require('./lib/sanitize');
 
 let dbReady = false;
+const secureCookies = process.env.NODE_ENV === 'production';
 
 // Connect
 var db = mysql.createConnection({
@@ -32,8 +41,26 @@ db.connect((err) => {
         console.error('Static files will still be served; API routes need MySQL.');
         return;
     }
-    dbReady = true;
-    console.log('mysql connected to easy_gig');
+
+    db.query(
+        `CREATE TABLE IF NOT EXISTS sessions (
+            token_hash CHAR(64) NOT NULL,
+            user_id INT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            PRIMARY KEY (token_hash),
+            KEY sessions_user (user_id),
+            KEY sessions_expiry (expires_at)
+        )`,
+        (tableErr) => {
+            if (tableErr) {
+                console.error('Could not create sessions table:', tableErr.message);
+                return;
+            }
+            dbReady = true;
+            console.log('mysql connected to easy_gig');
+        }
+    );
 });
 
 db.on('error', (err) => {
@@ -70,11 +97,12 @@ for (const path of [
     '/api/deletepostbyid',
     '/api/deleteaccountbyid',
     '/api/deletealluserposts',
+    '/api/signout',
 ]) {
     app.use(path, writeLimiter);
 }
 for (const path of [
-    '/api/getUserData',
+    '/api/me',
     '/api/getuser',
     '/api/getpostsbytitle',
     '/api/getpostsbylocation',
@@ -100,6 +128,46 @@ for (const path of [
 
 app.use(express.json({ limit: '32kb' }));
 app.use(express.static('public'));
+
+function requireUser(req, res, next) {
+    const token = readSessionToken(req.headers.cookie);
+    if (!token) {
+        return sendError(res, 401, 'Sign in required');
+    }
+    if (!dbReady) {
+        return sendError(res, 503, 'Database unavailable');
+    }
+
+    const tokenHash = hashSessionToken(token);
+    runQuery(
+        res,
+        'SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > NOW()',
+        [tokenHash],
+        (rows) => {
+            if (rows.length === 0) {
+                res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+                sendError(res, 401, 'Sign in required');
+                return;
+            }
+            req.userId = rows[0].user_id;
+            req.sessionTokenHash = tokenHash;
+            next();
+        }
+    );
+}
+
+for (const path of [
+    '/api/me',
+    '/api/addpost',
+    '/api/updatecurrentbid',
+    '/api/updateuser',
+    '/api/updatePassword',
+    '/api/deletepostbyid',
+    '/api/deleteaccountbyid',
+    '/api/deletealluserposts',
+]) {
+    app.use(path, requireUser);
+}
 
 app.use('/api', (req, res, next) => {
     if (!dbReady) {
@@ -254,8 +322,7 @@ app.post('/api/addpost', (req, res) => {
     const location = readField(res, textField(body.location, 'Location'));
     const pay = readField(res, moneyField(body.pay, 'Pay'));
     const payType = readField(res, payTypeField(body.payType));
-    const userId = readField(res, idField(body.user_id, 'User'));
-    if ([title, description, location, pay, payType, userId].some((value) => value == null)) {
+    if ([title, description, location, pay, payType].some((value) => value == null)) {
         return;
     }
 
@@ -263,7 +330,7 @@ app.post('/api/addpost', (req, res) => {
         res,
         `INSERT INTO posts (title, description, location, max_pay, type_of_pay, user_id)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [title, description, location, pay, payType, userId],
+        [title, description, location, pay, payType, req.userId],
         (result) => {
             console.log(result);
             res.json(result);
@@ -296,28 +363,61 @@ app.post('/api/signin', (req, res) => {
                 return;
             }
 
-            res.json({
-                success: true,
-                name: user.name,
-                userId: user.id,
-                salt: user.salt
-            });
+            const previous = readSessionToken(req.headers.cookie);
+            db.query(
+                'DELETE FROM sessions WHERE expires_at <= NOW() OR token_hash = ?',
+                [previous ? hashSessionToken(previous) : ''],
+                (cleanupErr) => {
+                    if (cleanupErr) {
+                        console.error('session cleanup', cleanupErr.message);
+                    }
+                }
+            );
+
+            const token = newSessionToken();
+            runQuery(
+                res,
+                `INSERT INTO sessions (token_hash, user_id, expires_at)
+                 VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
+                [hashSessionToken(token), user.id, SESSION_TTL_SECONDS],
+                () => {
+                    res.setHeader('Set-Cookie', sessionCookie(token, secureCookies));
+                    res.json({
+                        success: true,
+                        name: user.name,
+                        userId: user.id
+                    });
+                }
+            );
         }
     );
 });
 
-app.get('/api/getUserData', (req, res) => {
-    const userId = readField(res, idField(req.query.userId, 'User'));
-    if (userId == null) {
+app.post('/api/signout', (req, res) => {
+    res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+    const token = readSessionToken(req.headers.cookie);
+    if (!token) {
+        res.json({ ok: true });
         return;
     }
 
+    runQuery(res, 'DELETE FROM sessions WHERE token_hash = ?', [hashSessionToken(token)], () => {
+        res.json({ ok: true });
+    });
+});
+
+app.get('/api/me', (req, res) => {
     runQuery(
         res,
-        'SELECT name, email FROM users WHERE id = ?',
-        [userId],
+        'SELECT id, name, email FROM users WHERE id = ?',
+        [req.userId],
         (result) => {
-            res.json(result);
+            if (result.length === 0) {
+                res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+                sendError(res, 401, 'Sign in required');
+                return;
+            }
+            res.json(result[0]);
         }
     );
 });
@@ -425,16 +525,15 @@ app.put('/api/updateuser', (req, res) => {
     const body = req.body || {};
     const name = readField(res, textField(body.name, 'Name'));
     const email = readField(res, emailField(body.email));
-    const userId = readField(res, idField(body.user_id, 'User'));
-    if (name == null || email == null || userId == null) {
+    if (name == null || email == null) {
         return;
     }
 
-    rejectIfEmailTaken(res, email, userId, () => {
+    rejectIfEmailTaken(res, email, req.userId, () => {
         runQuery(
             res,
             'UPDATE users SET name = ?, email = ? WHERE id = ?',
-            [name, email, userId],
+            [name, email, req.userId],
             (result) => {
                 res.json(result);
             }
@@ -460,8 +559,7 @@ function rejectIfEmailTaken(res, email, exceptUserId, onFree) {
 app.put('/api/updatePassword', (req, res) => {
     const body = req.body || {};
     const password = readField(res, passwordField(body.newPassword));
-    const userId = readField(res, idField(body.userId, 'User'));
-    if (password == null || userId == null) {
+    if (password == null) {
         return;
     }
 
@@ -471,10 +569,16 @@ app.put('/api/updatePassword', (req, res) => {
     runQuery(
         res,
         'UPDATE users SET password = ?, salt = ? WHERE id = ?',
-        [hash, salt, userId],
+        [hash, salt, req.userId],
         (result) => {
-            console.log(result);
-            res.json(result);
+            runQuery(
+                res,
+                'DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?',
+                [req.userId, req.sessionTokenHash],
+                () => {
+                    res.json(result);
+                }
+            );
         }
     );
 });
@@ -509,33 +613,34 @@ app.delete('/api/deletepostbyid', (req, res) => {
         return;
     }
 
-    runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
-        console.log(result);
-        res.send(result);
-    });
+    runQuery(
+        res,
+        'DELETE FROM posts WHERE id = ? AND user_id = ?',
+        [postId, req.userId],
+        (result) => {
+            if (result.affectedRows === 0) {
+                sendError(res, 404, 'Post not found');
+                return;
+            }
+            res.json(result);
+        }
+    );
 });
 
 app.delete('/api/deleteaccountbyid', (req, res) => {
-    const body = req.body || {};
-    const userId = readField(res, idField(body.user_id, 'User'));
-    if (userId == null) {
-        return;
-    }
-
-    runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
-        console.log(result);
-        res.send(result);
+    const userId = req.userId;
+    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], () => {
+        runQuery(res, 'DELETE FROM sessions WHERE user_id = ?', [userId], () => {
+            runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
+                res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+                res.json(result);
+            });
+        });
     });
 });
 
 app.delete('/api/deletealluserposts', (req, res) => {
-    const body = req.body || {};
-    const userId = readField(res, idField(body.user_id, 'User'));
-    if (userId == null) {
-        return;
-    }
-
-    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], (result) => {
+    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [req.userId], (result) => {
         console.log(result);
         res.json(result);
     });
