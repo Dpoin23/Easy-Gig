@@ -143,12 +143,28 @@ async function main() {
       ['DELETE', '/api/deletepostbyid'],
       ['DELETE', '/api/deleteaccountbyid'],
       ['DELETE', '/api/deletealluserposts'],
+      ['POST', '/api/conversations'],
+      ['GET', '/api/conversations'],
+      ['GET', '/api/conversations/1/messages'],
+      ['POST', '/api/conversations/1/messages'],
+      ['PUT', '/api/conversations/1/read'],
+      ['GET', '/api/messages/unread-count'],
     ];
     for (const [method, pathname] of noSession) {
       const anon = await request(pathname, { method });
       if (anon.statusCode !== 401) {
         throw new Error(`${method} ${pathname} without a session expected 401, got ${anon.statusCode}`);
       }
+    }
+
+    const poll = await request('/api/conversations/1/messages');
+    if (poll.headers['ratelimit-limit'] !== '20') {
+      throw new Error(`message poll rate limit expected 20, got ${poll.headers['ratelimit-limit']}`);
+    }
+
+    const messagesPage = await request('/messages.html');
+    if (messagesPage.statusCode !== 200) {
+      throw new Error(`GET /messages.html expected 200, got ${messagesPage.statusCode}`);
     }
 
     console.log(`smoke ok: /=${home.statusCode} api=${api.statusCode} badJson=${badJson.statusCode} noSession=401`);

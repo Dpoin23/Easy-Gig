@@ -27,6 +27,20 @@ const {
     profileGigs,
     ensureBidsTable,
 } = require('./lib/bids');
+const {
+    MESSAGES_AFTER_SQL,
+    INBOX_SQL,
+    UNREAD_COUNT_SQL,
+    messageBody,
+    rejectOwnPost,
+    conversationAccess,
+    afterMessageId,
+    inboxItem,
+    publicMessage,
+    publicConversation,
+    deleteThreadsForPosts,
+    ensureMessageTables,
+} = require('./lib/messages');
 const { dbConfig } = require('./lib/dbConfig');
 const {
     SESSION_TTL_SECONDS,
@@ -130,8 +144,14 @@ db.connect((err) => {
                             console.error('Could not create post images table:', imagesErr.message);
                             return;
                         }
-                        dbReady = true;
-                        console.log('mysql connected to easy_gig');
+                        ensureMessageTables(db, (messagesErr) => {
+                            if (messagesErr) {
+                                console.error('Could not create message tables:', messagesErr.message);
+                                return;
+                            }
+                            dbReady = true;
+                            console.log('mysql connected to easy_gig');
+                        });
                     });
                 });
             });
@@ -163,6 +183,25 @@ const writeLimiter = limiter(30, 15 * 60 * 1000);
 const readLimiter = limiter(60, 60 * 1000);
 const placesLimiter = limiter(40, 60 * 1000);
 const maintenanceLimiter = limiter(5, 15 * 60 * 1000);
+const pollLimiter = limiter(20, 60 * 1000);
+
+function messagingLimiter(req, res, next) {
+    const path = req.path;
+    const threadMessages = /^\/api\/conversations\/\d+\/messages$/.test(path);
+    if ((req.method === 'GET' && threadMessages) || (req.method === 'GET' && path === '/api/messages/unread-count')) {
+        return pollLimiter(req, res, next);
+    }
+    if (
+        (req.method === 'POST' && (path === '/api/conversations' || threadMessages))
+        || (req.method === 'PUT' && /^\/api\/conversations\/\d+\/read$/.test(path))
+    ) {
+        return writeLimiter(req, res, next);
+    }
+    if (req.method === 'GET' && path === '/api/conversations') {
+        return readLimiter(req, res, next);
+    }
+    next();
+}
 
 for (const path of ['/api/adduser', '/api/signin', '/api/updatePassword']) {
     app.use(path, authLimiter);
@@ -196,6 +235,7 @@ for (const path of [
 for (const path of ['/api/places/autocomplete', '/api/places/details']) {
     app.use(path, placesLimiter);
 }
+app.use(messagingLimiter);
 for (const path of [
     '/createdb',
     '/createpoststable',
@@ -272,6 +312,8 @@ for (const path of [
     '/api/deleteaccountbyid',
     '/api/deletealluserposts',
     '/api/posts',
+    '/api/conversations',
+    '/api/messages/unread-count',
 ]) {
     app.use(path, requireUser);
 }
@@ -804,6 +846,183 @@ app.get('/api/me', (req, res) => {
             res.json(result[0]);
         }
     );
+});
+
+function withConversation(res, conversationId, userId, onOk) {
+    runQuery(
+        res,
+        'SELECT id, post_id, poster_id, worker_id FROM conversations WHERE id = ?',
+        [conversationId],
+        (rows) => {
+            const access = conversationAccess(rows[0], userId);
+            if (access.error) {
+                sendError(res, access.status, access.error);
+                return;
+            }
+            onOk(access.conversation);
+        }
+    );
+}
+
+function removeThreads(res, postIds, onOk) {
+    deleteThreadsForPosts(db, postIds, (err) => {
+        if (err) {
+            console.error(err.code || 'query', err.message);
+            sendError(res, 500, 'Database error');
+            return;
+        }
+        onOk();
+    });
+}
+
+app.post('/api/conversations', (req, res) => {
+    const postId = readField(res, idField((req.body || {}).postId, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
+    runQuery(res, 'SELECT id, user_id FROM posts WHERE id = ?', [postId], (posts) => {
+        if (posts.length === 0) {
+            sendError(res, 404, 'Post not found');
+            return;
+        }
+        const rejected = rejectOwnPost(posts[0].user_id, req.userId);
+        if (rejected) {
+            sendError(res, rejected.status, rejected.error);
+            return;
+        }
+
+        const posterId = posts[0].user_id;
+        const existingSql = 'SELECT id, post_id, poster_id, worker_id FROM conversations WHERE post_id = ? AND worker_id = ?';
+        runQuery(res, existingSql, [postId, req.userId], (existing) => {
+            if (existing.length > 0) {
+                res.json(publicConversation(existing[0]));
+                return;
+            }
+
+            db.query(
+                'INSERT INTO conversations (post_id, poster_id, worker_id) VALUES (?, ?, ?)',
+                [postId, posterId, req.userId],
+                (err, result) => {
+                    if (err && err.code === 'ER_DUP_ENTRY') {
+                        runQuery(res, existingSql, [postId, req.userId], (rows) => {
+                            if (rows.length === 0) {
+                                sendError(res, 500, 'Database error');
+                                return;
+                            }
+                            res.json(publicConversation(rows[0]));
+                        });
+                        return;
+                    }
+                    if (err) {
+                        console.error(err.code || 'query', err.message);
+                        sendError(res, 500, 'Database error');
+                        return;
+                    }
+                    res.status(201).json(publicConversation({
+                        id: result.insertId,
+                        post_id: postId,
+                        poster_id: posterId,
+                        worker_id: req.userId,
+                    }));
+                }
+            );
+        });
+    });
+});
+
+app.get('/api/conversations', (req, res) => {
+    runQuery(
+        res,
+        INBOX_SQL,
+        [req.userId, req.userId, req.userId, req.userId],
+        (rows) => {
+            res.json({ conversations: rows.map((row) => inboxItem(row, req.userId)) });
+        }
+    );
+});
+
+app.get('/api/conversations/:id/messages', (req, res) => {
+    const conversationId = readField(res, idField(req.params.id, 'Conversation'));
+    if (conversationId == null) {
+        return;
+    }
+    const after = readField(res, afterMessageId(req.query.after));
+    if (after == null) {
+        return;
+    }
+
+    withConversation(res, conversationId, req.userId, () => {
+        runQuery(res, MESSAGES_AFTER_SQL, [conversationId, after], (rows) => {
+            res.json({ messages: rows.map((row) => publicMessage(row, req.userId)) });
+        });
+    });
+});
+
+app.post('/api/conversations/:id/messages', (req, res) => {
+    const conversationId = readField(res, idField(req.params.id, 'Conversation'));
+    if (conversationId == null) {
+        return;
+    }
+    const body = readField(res, messageBody((req.body || {}).body));
+    if (body == null) {
+        return;
+    }
+
+    withConversation(res, conversationId, req.userId, () => {
+        db.query(
+            'INSERT INTO messages (conversation_id, sender_id, body) VALUES (?, ?, ?)',
+            [conversationId, req.userId, body],
+            (err, result) => {
+                if (err) {
+                    console.error(err.code || 'query', err.message);
+                    sendError(res, 500, 'Database error');
+                    return;
+                }
+                runQuery(
+                    res,
+                    'UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [conversationId],
+                    () => {
+                        runQuery(
+                            res,
+                            'SELECT id, sender_id, body, created_at, read_at FROM messages WHERE id = ?',
+                            [result.insertId],
+                            (rows) => {
+                                res.status(201).json(publicMessage(rows[0], req.userId));
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+});
+
+app.put('/api/conversations/:id/read', (req, res) => {
+    const conversationId = readField(res, idField(req.params.id, 'Conversation'));
+    if (conversationId == null) {
+        return;
+    }
+
+    withConversation(res, conversationId, req.userId, () => {
+        runQuery(
+            res,
+            `UPDATE messages
+             SET read_at = CURRENT_TIMESTAMP
+             WHERE conversation_id = ? AND sender_id <> ? AND read_at IS NULL`,
+            [conversationId, req.userId],
+            () => {
+                res.json({ ok: true });
+            }
+        );
+    });
+});
+
+app.get('/api/messages/unread-count', (req, res) => {
+    runQuery(res, UNREAD_COUNT_SQL, [req.userId, req.userId, req.userId], (rows) => {
+        res.json({ unread: Number(rows[0] && rows[0].unread) || 0 });
+    });
 });
 
 app.get('/api/getuser', (req, res) => {
@@ -1398,6 +1617,7 @@ app.delete('/api/deletepostbyid', (req, res) => {
                 sendError(res, 404, 'Post not found');
                 return;
             }
+            removeThreads(res, [postId], () => {
             runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
                 purgePostImages([postId], (purgeErr) => {
                     if (purgeErr) {
@@ -1414,6 +1634,7 @@ app.delete('/api/deletepostbyid', (req, res) => {
                         }
                     );
                 });
+            });
             });
         }
     );
@@ -1436,6 +1657,9 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
                     [userId],
                     () => {
                         runQuery(res, 'SELECT id FROM posts WHERE user_id = ?', [userId], (owned) => {
+                            // Threads on this person's gigs go away with the posts.
+                            // Threads where they were the worker stay, so the poster still has the record.
+                            removeThreads(res, owned.map((row) => row.id), () => {
                             purgePostImages(owned.map((row) => row.id), (purgeErr) => {
                                 if (purgeErr) {
                                     console.error(purgeErr.code || 'query', purgeErr.message);
@@ -1453,6 +1677,7 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
                                     });
                                 });
                             });
+                            });
                         });
                     }
                 );
@@ -1464,6 +1689,7 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
 app.delete('/api/deletealluserposts', (req, res) => {
     runQuery(res, 'SELECT id FROM posts WHERE user_id = ?', [req.userId], (owned) => {
         const ids = owned.map((row) => row.id);
+        removeThreads(res, ids, () => {
         runQuery(
             res,
             `DELETE bids FROM bids
@@ -1483,6 +1709,7 @@ app.delete('/api/deletealluserposts', (req, res) => {
                 });
             }
         );
+        });
     });
 });
 
@@ -1492,6 +1719,7 @@ app.get('/deletepost/:id', (req, res) => {
         return;
     }
 
+    removeThreads(res, [postId], () => {
     runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
         purgePostImages([postId], () => {
             runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
@@ -1500,14 +1728,17 @@ app.get('/deletepost/:id', (req, res) => {
             });
         });
     });
+    });
 });
 
 app.get('/deletespecificpostfortesting', (req, res) => {
+    removeThreads(res, [3], () => {
     purgePostImages([3], () => {
         runQuery(res, 'DELETE FROM posts WHERE id = 3', [], (result) => {
             console.log(result);
             res.send('post deleted');
         });
+    });
     });
 });
 

@@ -150,6 +150,30 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
             imageNames = images.map((row) => row.stored_name);
             await conn.query('DELETE FROM post_images WHERE post_id IN (?)', [postIds]);
         }
+        if (tables.has('conversations') && (postIds.length > 0 || userIds.length > 0)) {
+            const conversationIds = new Set();
+            if (postIds.length > 0) {
+                const [byPost] = await conn.query(
+                    'SELECT id FROM conversations WHERE post_id IN (?)',
+                    [postIds]
+                );
+                byPost.forEach((row) => conversationIds.add(row.id));
+            }
+            if (userIds.length > 0) {
+                const [byUser] = await conn.query(
+                    'SELECT id FROM conversations WHERE poster_id IN (?) OR worker_id IN (?)',
+                    [userIds, userIds]
+                );
+                byUser.forEach((row) => conversationIds.add(row.id));
+            }
+            const ids = [...conversationIds];
+            if (ids.length > 0) {
+                if (tables.has('messages')) {
+                    await conn.query('DELETE FROM messages WHERE conversation_id IN (?)', [ids]);
+                }
+                await conn.query('DELETE FROM conversations WHERE id IN (?)', [ids]);
+            }
+        }
         if (tables.has('bids') && (postIds.length > 0 || userIds.length > 0)) {
             if (postIds.length > 0) {
                 await conn.query('DELETE FROM bids WHERE post_id IN (?)', [postIds]);
