@@ -8,7 +8,7 @@ Local gig board: Express + MySQL API with a static HTML/CSS/JS frontend.
 server.js          # Express API + static file server
 lib/               # Search ranking
 public/            # Frontend (HTML, JS, CSS, images)
-scripts/           # Smoke check and database seed
+scripts/           # Smoke check, database seed, test-data cleanup
 test/              # Unit tests and local testing notes
 ```
 
@@ -28,7 +28,9 @@ Posting a gig requires a real city, neighborhood, or ZIP from Google Places, not
 Search matches part of a title, location, pay type, or pay amount. Closer matches are listed first. Posts that only overlap in another field, or pay amounts nearby, appear below a Related searches line.
 
 ```bash
-npm run seed         # demo users and gigs; password is password123
+npm run seed         # 3 demo users and 3 gigs with real places; needs GOOGLE_PLACES_API_KEY; password is password123
+npm run clear-test-data            # dry run: list demo/test rows to delete
+npm run clear-test-data -- --yes   # delete them (add --legacy to also drop pre-Places posts)
 npm test
 npm run lint
 npm run syntax

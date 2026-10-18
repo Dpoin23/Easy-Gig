@@ -3,7 +3,7 @@
 **Who:** whoever stands the app up so other people can use it.  
 **Why:** Easy Gig runs on one machine today (`npm run dev`, MySQL on `localhost`). A hosted copy has to keep accounts and gigs after the laptop is closed, and it has to stop exposing routes that wipe data.
 
-App shape today: Node `>=20`, Express serving `public/`, MySQL database `easy_gig`. Sign-in sets an httpOnly `eg_session` cookie backed by a `sessions` table; write routes take the user from that session. There is no Docker file, no process manager, and database settings are hardcoded in `server.js` and `scripts/seed.js`.
+App shape today: Node `>=20`, Express serving `public/`, MySQL database `easy_gig`. Sign-in sets an httpOnly `eg_session` cookie backed by a `sessions` table; write routes take the user from that session. There is no Docker file and no process manager. Database settings come from `MYSQL_*` env vars (`lib/dbConfig.js`), falling back to the local dev defaults.
 
 ## What “hosted and usable” means
 
@@ -23,14 +23,14 @@ These are in the app today. Do them before DNS points at the server.
 
 | Gap | Why it blocks a public host |
 |-----|-----------------------------|
-| MySQL host, user, and password are hardcoded | The password ships in git. Production needs env vars and a database user that is not `root`. |
+| MySQL falls back to a root password in git | `MYSQL_*` env vars override it, but the default password still ships in `lib/dbConfig.js`. Production needs those env vars set and a database user that is not `root`; remove the default before going public. |
 | Open maintenance routes | `GET /createdb`, `GET /deletepost/:id`, `GET /updatepost/:id`, `GET /deletespecificpostfortesting`, `DELETE /deleteallusers`, and the other non-`/api` table routes can create or destroy data with no sign-in. They also bypass the session and post-ownership checks on `/api`. Remove them from the process that faces the internet. Keep schema changes in a migration script, not HTTP. |
 | Session cookie needs HTTPS | Set `NODE_ENV=production` so `eg_session` is sent with `Secure`. Without it the cookie works over plain HTTP, which is only acceptable on localhost. |
 | `users` schema and inserts disagree | `GET /createuserstable` does not add `salt`, but `/api/adduser` inserts `salt`. Apply one schema that includes `salt` before the first real signup. |
 | CORS is open (`app.use(cors())`) | Fine while the HTML and API share one origin. Lock it if a separate frontend host is added later. |
 | `SELECT * FROM posts` on every search | Fine for a small board. Add a SQL `WHERE` (and an index on title/location) before the table is large. |
 | Listen address | `app.listen(PORT)` accepts connections on every interface. In production bind Node to `127.0.0.1` and let the reverse proxy own `443`. |
-| Seed script | `npm run seed` inserts demo accounts with a shared password. Do not run it on a public database. |
+| Seed and clear scripts | `npm run seed` inserts demo accounts with a shared password; `npm run clear-test-data` deletes demo and test rows. Both refuse to run with `NODE_ENV=production`. Do not point them at a public database. |
 
 Rate limits on auth, writes, and reads are already in `server.js`. Keep them.
 
@@ -48,7 +48,7 @@ One small Linux VM is enough. Same box for Node and MySQL until there is a reaso
 | Backups | Daily dump of `easy_gig` | Accounts and posts are the product. A VM snapshot is not a substitute for a database dump stored off the box. |
 | Env file | Secrets | Not committed. See below. |
 
-Environment variables the app needs once the hardcoded connection is removed:
+Environment variables the app reads:
 
 | Variable | Example |
 |----------|---------|

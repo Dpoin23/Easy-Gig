@@ -27,7 +27,19 @@ GOOGLE_PLACES_API_KEY=your_key_here
 
 8. Restart the Node process. `lib/loadEnv.js` reads `.env` on startup and does not override variables already in the environment.
 
-Without a key, the site still loads. Autocomplete and new posts that need a place return `503 Location lookup is not configured`. Seeded demo gigs keep working because they already store city coordinates.
+Without a key, the site still loads. Autocomplete and new posts that need a place return `503 Location lookup is not configured`, and `npm run seed` stops before inserting any gigs.
+
+## Seeding without wasting lookups
+
+`npm run seed` resolves demo gig locations through the same Place Details path as `/api/addpost`, so seeded gigs carry real place ids and coordinates. To keep usage low it seeds only three gigs (Seattle with one hidden street address, Bellevue, Tacoma). That is four autocomplete sessions, each ending in one Place Details request. Gigs that already exist are skipped, so a second run makes no Places calls. The script prints how many lookups it made.
+
+Clear the old free-text demo and test rows first:
+
+```bash
+npm run clear-test-data          # dry run
+npm run clear-test-data -- --yes
+npm run seed
+```
 
 ## What the app calls
 
