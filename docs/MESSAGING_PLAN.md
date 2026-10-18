@@ -77,9 +77,9 @@ Rate limits: sends go in a limiter like `writeLimiter`. Polling gets its own lim
 
 ## Retention and deletion
 
-- Keep a thread while both accounts and the post exist.
-- Account deletion: choose one before launch. Either delete that user's messages with the account, or keep the thread and show "Deleted user" so the other side keeps their record. The second is kinder to the person who stays.
-- Optional: a nightly job that removes conversations with no activity for about 12 months. That is a privacy and storage policy, not something the feature needs to work.
+- Keep a thread while the post exists. Deleting a gig removes that gig's threads.
+- Account deletion keeps threads where that person was the worker, and the poster sees "Deleted user". Their own gigs are deleted with the account, and those threads go with the posts. The messages stay as the other person's record.
+- `npm run purge-stale-conversations` lists conversations with no activity for 12 months. Pass `--yes` to delete them. That is a privacy and storage policy, not something messaging needs in order to work.
 
 ## Tests
 
