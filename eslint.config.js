@@ -46,4 +46,19 @@ module.exports = [
       'no-console': 'off',
     },
   },
+  {
+    files: [
+      'public/javascript/main.js',
+      'public/javascript/post.js',
+      'public/javascript/profile.js',
+    ],
+    languageOptions: {
+      globals: {
+        bindPlacePicker: 'readonly',
+        gigLocationHtml: 'readonly',
+        gigAreaLabel: 'readonly',
+        escapeGigText: 'readonly',
+      },
+    },
+  },
 ];

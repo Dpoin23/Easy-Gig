@@ -24,16 +24,35 @@
         <hr class="topline"/>
 
         <div class="search-box">
-            <form class="search-bar" id="search-bar">
-                <input type="text" placeholder="Search for a Gig" class="search-input" name="search">
-                <label class="search-label">Search By:</label>
-                <select class="search-select" name="search-select" id="search-select">
-                    <option value="Title">Title</option>
-                    <option value="Location">Location</option>
-                    <option value="Type">Type of Pay</option>
-                    <option value="Pay">Pay</option>
-                </select>
-                <button type="submit" class="search-button">Find</button>
+            <form id="search-form">
+                <div class="search-bar" id="search-bar">
+                    <div class="place-picker search-place-picker" id="search-place-picker">
+                        <input type="text" placeholder="Search for a Gig" class="search-input" name="search" id="search-input">
+                        <input type="hidden" name="placeId" id="search-place-id">
+                        <ul class="place-suggestions" hidden></ul>
+                    </div>
+                    <label class="search-label">Search By:</label>
+                    <select class="search-select" name="search-select" id="search-select">
+                        <option value="Title">Title</option>
+                        <option value="Location">Location</option>
+                        <option value="Type">Type of Pay</option>
+                        <option value="Pay">Pay</option>
+                    </select>
+                    <button type="submit" class="search-button">Find</button>
+                </div>
+                <div class="search-location-tools" id="search-location-tools" hidden>
+                    <label class="search-distance-label" for="search-radius">Within
+                        <select class="search-select search-radius" name="radius" id="search-radius">
+                            <option value="5">5 miles</option>
+                            <option value="10">10 miles</option>
+                            <option value="25" selected>25 miles</option>
+                            <option value="50">50 miles</option>
+                        </select>
+                    </label>
+                    <button type="button" class="search-location-button" id="use-my-location">Use my location</button>
+                    <p class="search-location-hint">Type a city or neighborhood. You do not have to share your device location.</p>
+                    <p class="search-location-status" id="search-location-status" hidden></p>
+                </div>
             </form>
         </div>
 
@@ -47,6 +66,8 @@
     </footer>
 
     <script src="javascript/updateHeaderScript.js"></script>
+    <script src="javascript/placePicker.js"></script>
+    <script src="javascript/gigLocation.js"></script>
     <script src="javascript/main.js"></script>
 </body>
 

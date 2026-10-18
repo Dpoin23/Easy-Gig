@@ -1,26 +1,96 @@
-const search_form = document.getElementById('search-bar');
+const search_form = document.getElementById('search-form');
+const searchSelect = document.getElementById('search-select');
+const searchInput = document.getElementById('search-input');
+const locationTools = document.getElementById('search-location-tools');
+const locationStatus = document.getElementById('search-location-status');
+const useMyLocationButton = document.getElementById('use-my-location');
+
+let geoOrigin = null;
+
+const searchPlacePicker = bindPlacePicker(document.getElementById('search-place-picker'), {
+    mode: 'search',
+    onSelect() {
+        geoOrigin = null;
+        setLocationStatus('');
+    },
+});
+
+function locationModeOn() {
+    return searchSelect.value === 'Location';
+}
+
+function toggleLocationTools() {
+    locationTools.hidden = !locationModeOn();
+    searchInput.placeholder = locationModeOn()
+        ? 'City, neighborhood, or current area'
+        : 'Search for a Gig';
+    if (!locationModeOn()) {
+        geoOrigin = null;
+        setLocationStatus('');
+    }
+}
+
+searchSelect.addEventListener('change', toggleLocationTools);
+toggleLocationTools();
+
+useMyLocationButton.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+        setLocationStatus('This browser cannot share a current location. Type a city instead.');
+        return;
+    }
+
+    setLocationStatus('Reading your current location…');
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            geoOrigin = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+            };
+            searchPlacePicker.setBias(geoOrigin.lat, geoOrigin.lng);
+            setLocationStatus('Using your current location. Distance is measured from here.');
+        },
+        () => {
+            geoOrigin = null;
+            setLocationStatus('Could not read your location. Type a city instead.');
+        },
+        {
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 300000,
+        }
+    );
+});
 
 search_form.addEventListener('submit', function(e) {
     e.preventDefault();
     const data = new FormData(this);
+    const search = data.get('search');
+    const mode = data.get('search-select');
 
-    if (data.get('search-select') == 'Title') {
-        searchTitle(data.get('search'));
-    } else if (data.get('search-select') == 'Location') {
-        searchLocation(data.get('search'));
-    } else if (data.get('search-select') == 'Type') {
-        searchType(data.get('search'));
+    if (mode === 'Title') {
+        searchTitle(search);
+    } else if (mode === 'Location') {
+        searchLocation(search, {
+            placeId: searchPlacePicker.getPlaceId(),
+            sessionToken: searchPlacePicker.getSessionToken(),
+            radius: data.get('radius'),
+            lat: geoOrigin ? geoOrigin.lat : null,
+            lng: geoOrigin ? geoOrigin.lng : null,
+        });
+    } else if (mode === 'Type') {
+        searchType(search);
     } else {
-        searchPay(data.get('search'));
+        searchPay(search);
     }
 });
 
+function setLocationStatus(message) {
+    locationStatus.hidden = !message;
+    locationStatus.textContent = message || '';
+}
+
 function escapeHtml(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return escapeGigText(value);
 }
 
 function appendPost(results, point) {
@@ -31,7 +101,7 @@ function appendPost(results, point) {
                     <label><strong>Description</strong></label>
                     <p class="display-description">${escapeHtml(point.description)}</p>
                     <div class="display-info">
-                        <div class="display-location">Location: ${escapeHtml(point.location)}</div>
+                        ${gigLocationHtml(point)}
                         <div class="display-type">Type of Pay: ${escapeHtml(point.type_of_pay)}</div>
                         <div class="display-pay">Pay: $${escapeHtml(point.max_pay)}</div>
                     </div>
@@ -96,18 +166,21 @@ async function updateBid(post, bid) {
             alert('Sign in to place a bid.');
             return;
         }
+        const body = await response.json().catch(() => ({}));
         if (!response.ok) {
-            throw new Error('failed to update bid');
+            alert(body.error || 'Could not place that bid.');
+            return;
         }
 
-        const update = await response.json();
-        console.log('Post updated: ', update);
-        alert('Bid placed!');
+        let message = 'Bid placed!';
+        if (post.has_precise_address && !post.precise_address) {
+            message = 'Bid placed. Exact address is shared after you are hired.';
+        }
+        alert(message);
         clearSearch();
     } catch (error) {
         console.error(error);
-    } 
-
+    }
 }
 
 function couldNotFind(message) {
@@ -130,7 +203,8 @@ async function runSearch(url, emptyMessage) {
         const response = await fetch(url);
 
         if (!response.ok) {
-            couldNotFind(emptyMessage);
+            const body = await response.json().catch(() => ({}));
+            couldNotFind(body.error || emptyMessage);
             return;
         }
 
@@ -157,11 +231,30 @@ async function searchTitle(search) {
     );
 }
 
-async function searchLocation(search) {
-    const query = encodeURIComponent(search);
+async function searchLocation(search, extras) {
+    const params = new URLSearchParams();
+    if (search) {
+        params.set('search', search);
+    }
+    if (extras.radius) {
+        params.set('radius', extras.radius);
+    }
+    if (extras.lat != null && extras.lng != null) {
+        params.set('lat', extras.lat);
+        params.set('lng', extras.lng);
+    } else if (extras.placeId) {
+        params.set('placeId', extras.placeId);
+        if (extras.sessionToken) {
+            params.set('sessionToken', extras.sessionToken);
+        }
+    }
+
+    const label = extras.lat != null
+        ? 'your current location'
+        : (search || 'that area');
     await runSearch(
-        `/api/getpostsbylocation?search=${query}`,
-        `Could not find any posts with the location: "${search}"`
+        `/api/getpostsbylocation?${params.toString()}`,
+        `Could not find any posts near ${label}`
     );
 }
 

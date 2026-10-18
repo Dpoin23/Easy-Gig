@@ -216,8 +216,13 @@ a {
     border: 0;
     padding: 10px 12px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     box-sizing: border-box;
+}
+
+.search-box form {
+    width: 100%;
 }
 
 .search-input {
@@ -326,6 +331,167 @@ select:focus-visible {
 .search-bar:focus-within {
     border-color: var(--ink);
     box-shadow: 0 0 0 3px var(--focus), var(--shadow);
+}
+
+.search-place-picker {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.search-place-picker .search-input {
+    width: 100%;
+}
+
+.search-location-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 16px;
+    margin-top: 12px;
+    padding: 0 8px;
+}
+
+.search-location-tools[hidden],
+.place-suggestions[hidden] {
+    display: none;
+}
+
+.search-distance-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+}
+
+.search-radius {
+    margin-right: 0;
+}
+
+.search-location-button {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.search-location-button:hover {
+    background: var(--ink);
+    color: var(--surface);
+}
+
+.search-location-hint,
+.search-location-status {
+    width: 100%;
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.search-location-status {
+    color: var(--ink-soft);
+    font-weight: 500;
+}
+
+.place-picker {
+    position: relative;
+}
+
+.place-suggestions {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 30;
+    margin: 0;
+    padding: 6px 0 0;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lift);
+    text-align: left;
+}
+
+.search-place-picker .place-suggestions {
+    min-width: min(420px, 80vw);
+}
+
+.place-suggestion {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    cursor: pointer;
+}
+
+.place-suggestion:hover,
+.place-suggestion.is-active {
+    background: var(--well);
+}
+
+.place-suggestion-main {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.place-suggestion-secondary,
+.place-suggestion-empty {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 8px 12px;
+}
+
+.place-attribution {
+    margin-top: 4px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.post-help,
+.post-optional {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.post-visibility {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--well);
+}
+
+.post-visibility legend {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0 6px;
+}
+
+.post-visibility label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 15px;
+}
+
+.post-visibility input[type="radio"] {
+    width: auto;
+    height: auto;
+    max-width: none;
 }
 
 .signin-body,
@@ -619,6 +785,33 @@ select:focus-visible {
 .display-location {
     width: 250px;
     max-width: 250px;
+    line-height: 1.4;
+}
+
+.display-distance,
+.display-address,
+.display-address-note,
+.display-hired {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.display-address-note,
+.display-hired {
+    color: var(--muted);
+}
+
+.myposts-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hire-button {
+    width: auto;
+    min-width: 110px;
+    padding: 3px 10px;
 }
 
 .display-type {
@@ -791,6 +984,12 @@ select:focus-visible {
     .search-label {
         margin-right: 0;
         text-align: left;
+    }
+
+    .search-place-picker,
+    .search-place-picker .place-suggestions {
+        width: 100%;
+        min-width: 0;
     }
 
     .search-select,

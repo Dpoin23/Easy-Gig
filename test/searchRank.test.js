@@ -69,6 +69,16 @@ describe('rankPosts', () => {
         assert.deepEqual(related, []);
     });
 
+    it('matches a neighborhood stored separately from the display label', () => {
+        const withNeighborhood = posts.map((post) => (
+            post.id === 4
+                ? { ...post, location: 'Tacoma, WA', neighborhood: 'Stadium District' }
+                : post
+        ));
+        const { relevant } = rankPosts(withNeighborhood, 'stadium', 'location');
+        assert.deepEqual(relevant.map((post) => post.id), [4]);
+    });
+
     it('treats nearby pay as related and an equal pay as relevant', () => {
         const { relevant, related } = rankPosts(posts, '50', 'pay');
         assert.deepEqual(relevant.map((post) => post.id), [5]);

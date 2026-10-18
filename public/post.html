@@ -35,10 +35,38 @@
                     <input type="text" maxlength="500" name="description" id="description" required>
                 </li>
 
-                <li class="post-li"><strong>Location</strong></li>
-
+                <li class="post-li"><strong>City or service area</strong></li>
+                <li class="post-li post-help">Required. Pick a city, neighborhood, or ZIP from the suggestions — not free text.</li>
                 <li class="post-li">
-                    <input type="text" name="location" id="location" required>
+                    <div class="place-picker" id="area-picker">
+                        <input type="text" name="area" id="area" placeholder="Start typing a city or neighborhood" required>
+                        <input type="hidden" name="areaPlaceId" id="areaPlaceId">
+                        <ul class="place-suggestions" hidden></ul>
+                    </div>
+                </li>
+
+                <li class="post-li"><strong>Street address</strong> <span class="post-optional">(optional)</span></li>
+                <li class="post-li post-help">Add this if the worker needs a precise place to show up. It stays off the public listing unless you choose otherwise.</li>
+                <li class="post-li">
+                    <div class="place-picker" id="address-picker">
+                        <input type="text" name="address" id="address" placeholder="Start typing a street address">
+                        <input type="hidden" name="addressPlaceId" id="addressPlaceId">
+                        <ul class="place-suggestions" hidden></ul>
+                    </div>
+                </li>
+
+                <li class="post-li" id="address-visibility-row">
+                    <fieldset class="post-visibility">
+                        <legend>Street address visibility</legend>
+                        <label>
+                            <input type="radio" name="addressVisibility" value="after_hire" checked>
+                            Hide until hired
+                        </label>
+                        <label>
+                            <input type="radio" name="addressVisibility" value="public">
+                            Show on the listing
+                        </label>
+                    </fieldset>
                 </li>
 
                 <li class="post-li"><strong>Max Pay</strong><li>
@@ -55,6 +83,8 @@
                     <input type="number" placeholder="0.00" name="pay" id="pay" required>
                 </li>
 
+                <li class="post-li" id="post-status" hidden></li>
+
                 <li class="post-button-div">
                     <button class="post-button" type="submit">Create Post</button>
                 </li>
@@ -67,6 +97,7 @@
     </div>
     
     <script src="javascript/updateHeaderScript.js"></script>
+    <script src="javascript/placePicker.js"></script>
     <script src="javascript/post.js"></script>
 </body>
 

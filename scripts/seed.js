@@ -26,12 +26,76 @@ const users = [
     { name: 'Sam Patel', email: 'sam.patel@easygig.demo' },
 ];
 
+const cities = {
+    seattle: {
+        location: 'Seattle, WA',
+        locality: 'Seattle',
+        admin_area: 'WA',
+        lat: 47.6062,
+        lng: -122.3321,
+        place_id: 'seed:seattle-wa',
+    },
+    capitolHill: {
+        location: 'Capitol Hill, Seattle, WA',
+        locality: 'Seattle',
+        neighborhood: 'Capitol Hill',
+        admin_area: 'WA',
+        lat: 47.6253,
+        lng: -122.3222,
+        place_id: 'seed:capitol-hill-seattle',
+    },
+    bellevue: {
+        location: 'Bellevue, WA',
+        locality: 'Bellevue',
+        admin_area: 'WA',
+        lat: 47.6101,
+        lng: -122.2015,
+        place_id: 'seed:bellevue-wa',
+    },
+    tacoma: {
+        location: 'Tacoma, WA',
+        locality: 'Tacoma',
+        admin_area: 'WA',
+        lat: 47.2529,
+        lng: -122.4443,
+        place_id: 'seed:tacoma-wa',
+    },
+    kirkland: {
+        location: 'Kirkland, WA',
+        locality: 'Kirkland',
+        admin_area: 'WA',
+        lat: 47.6769,
+        lng: -122.2060,
+        place_id: 'seed:kirkland-wa',
+    },
+    redmond: {
+        location: 'Redmond, WA',
+        locality: 'Redmond',
+        admin_area: 'WA',
+        lat: 47.6740,
+        lng: -122.1215,
+        place_id: 'seed:redmond-wa',
+    },
+    renton: {
+        location: 'Renton, WA',
+        locality: 'Renton',
+        admin_area: 'WA',
+        lat: 47.4829,
+        lng: -122.2171,
+        place_id: 'seed:renton-wa',
+    },
+};
+
 const posts = [
     {
         email: 'alex.rivera@easygig.demo',
         title: 'Lawn mowing and edging',
         description: 'Weekly cut for a small front and back yard. Bag the clippings.',
-        location: 'Seattle, WA',
+        ...cities.capitolHill,
+        address_formatted: '1200 E Pine St, Seattle, WA 98122',
+        address_lat: 47.6152,
+        address_lng: -122.3163,
+        address_visibility: 'after_hire',
         max_pay: 40.00,
         type_of_pay: 'hourly',
     },
@@ -39,7 +103,7 @@ const posts = [
         email: 'alex.rivera@easygig.demo',
         title: 'Mow the backyard',
         description: 'One visit. The yard is flat and the mower is in the shed.',
-        location: 'Bellevue, WA',
+        ...cities.bellevue,
         max_pay: 80.00,
         type_of_pay: 'one-time',
     },
@@ -47,7 +111,7 @@ const posts = [
         email: 'jordan.lee@easygig.demo',
         title: 'Yard cleanup',
         description: 'Weeding and mowing the edges before a weekend gathering.',
-        location: 'Seattle, WA',
+        ...cities.seattle,
         max_pay: 120.00,
         type_of_pay: 'one-time',
     },
@@ -55,7 +119,7 @@ const posts = [
         email: 'jordan.lee@easygig.demo',
         title: 'Dog walking on weekdays',
         description: 'Two medium dogs, about 40 minutes, mornings preferred.',
-        location: 'Tacoma, WA',
+        ...cities.tacoma,
         max_pay: 25.00,
         type_of_pay: 'hourly',
     },
@@ -63,7 +127,11 @@ const posts = [
         email: 'sam.patel@easygig.demo',
         title: 'Piano lessons for beginners',
         description: 'Half-hour lessons at home. Beginners and kids welcome.',
-        location: 'Kirkland, WA',
+        ...cities.kirkland,
+        address_formatted: 'Parkplace, Kirkland, WA 98033',
+        address_lat: 47.6765,
+        address_lng: -122.2050,
+        address_visibility: 'public',
         max_pay: 50.00,
         type_of_pay: 'hourly',
     },
@@ -71,7 +139,11 @@ const posts = [
         email: 'sam.patel@easygig.demo',
         title: 'Help moving boxes',
         description: 'Carry boxes from a second-floor apartment down to a truck.',
-        location: 'Seattle, WA',
+        ...cities.seattle,
+        address_formatted: '88 Yesler Way, Seattle, WA 98104',
+        address_lat: 47.6015,
+        address_lng: -122.3340,
+        address_visibility: 'after_hire',
         max_pay: 30.00,
         type_of_pay: 'hourly',
     },
@@ -79,7 +151,7 @@ const posts = [
         email: 'alex.rivera@easygig.demo',
         title: 'Algebra tutoring',
         description: 'High-school algebra, one evening a week.',
-        location: 'Redmond, WA',
+        ...cities.redmond,
         max_pay: 45.00,
         type_of_pay: 'hourly',
     },
@@ -87,7 +159,7 @@ const posts = [
         email: 'jordan.lee@easygig.demo',
         title: 'Assemble a bookshelf',
         description: 'Flat-pack bookshelf. Tools are on site and it should take about two hours.',
-        location: 'Renton, WA',
+        ...cities.renton,
         max_pay: 70.00,
         type_of_pay: 'one-time',
     },
@@ -131,6 +203,21 @@ async function main() {
             max_pay DECIMAL(8, 2),
             type_of_pay VARCHAR(255),
             current_bid DECIMAL(8, 2) DEFAULT 0,
+            place_id VARCHAR(255),
+            locality VARCHAR(255),
+            neighborhood VARCHAR(255),
+            admin_area VARCHAR(64),
+            country VARCHAR(64),
+            postal_code VARCHAR(32),
+            lat DECIMAL(10, 7),
+            lng DECIMAL(10, 7),
+            address_place_id VARCHAR(255),
+            address_formatted VARCHAR(512),
+            address_lat DECIMAL(10, 7),
+            address_lng DECIMAL(10, 7),
+            address_visibility VARCHAR(32) NOT NULL DEFAULT 'after_hire',
+            current_bidder_id INT,
+            accepted_user_id INT,
             PRIMARY KEY (id)
         )`);
 
@@ -147,6 +234,21 @@ async function main() {
         await ensureColumn(conn, 'users', 'salt', 'VARCHAR(255)');
         await ensureColumn(conn, 'posts', 'user_id', 'INT');
         await ensureColumn(conn, 'posts', 'current_bid', 'DECIMAL(8, 2) DEFAULT 0');
+        await ensureColumn(conn, 'posts', 'place_id', 'VARCHAR(255) NULL');
+        await ensureColumn(conn, 'posts', 'locality', 'VARCHAR(255) NULL');
+        await ensureColumn(conn, 'posts', 'neighborhood', 'VARCHAR(255) NULL');
+        await ensureColumn(conn, 'posts', 'admin_area', 'VARCHAR(64) NULL');
+        await ensureColumn(conn, 'posts', 'country', 'VARCHAR(64) NULL');
+        await ensureColumn(conn, 'posts', 'postal_code', 'VARCHAR(32) NULL');
+        await ensureColumn(conn, 'posts', 'lat', 'DECIMAL(10, 7) NULL');
+        await ensureColumn(conn, 'posts', 'lng', 'DECIMAL(10, 7) NULL');
+        await ensureColumn(conn, 'posts', 'address_place_id', 'VARCHAR(255) NULL');
+        await ensureColumn(conn, 'posts', 'address_formatted', 'VARCHAR(512) NULL');
+        await ensureColumn(conn, 'posts', 'address_lat', 'DECIMAL(10, 7) NULL');
+        await ensureColumn(conn, 'posts', 'address_lng', 'DECIMAL(10, 7) NULL');
+        await ensureColumn(conn, 'posts', 'address_visibility', "VARCHAR(32) NOT NULL DEFAULT 'after_hire'");
+        await ensureColumn(conn, 'posts', 'current_bidder_id', 'INT NULL');
+        await ensureColumn(conn, 'posts', 'accepted_user_id', 'INT NULL');
 
         const idsByEmail = new Map();
         for (const user of users) {
@@ -168,18 +270,59 @@ async function main() {
 
         for (const post of posts) {
             const userId = idsByEmail.get(post.email);
+            const locationValues = [
+                post.location,
+                post.place_id,
+                post.locality || null,
+                post.neighborhood || null,
+                post.admin_area || null,
+                post.lat,
+                post.lng,
+                post.address_formatted || null,
+                post.address_lat || null,
+                post.address_lng || null,
+                post.address_visibility || 'after_hire',
+            ];
             const [existing] = await conn.query(
                 'SELECT id FROM posts WHERE user_id = ? AND title = ?',
                 [userId, post.title]
             );
             if (existing.length > 0) {
+                await conn.query(
+                    `UPDATE posts
+                     SET location = ?, place_id = ?, locality = ?, neighborhood = ?, admin_area = ?,
+                         lat = ?, lng = ?, address_formatted = ?, address_lat = ?, address_lng = ?,
+                         address_visibility = ?
+                     WHERE id = ?`,
+                    [...locationValues, existing[0].id]
+                );
                 continue;
             }
 
             await conn.query(
-                `INSERT INTO posts (user_id, title, description, location, max_pay, type_of_pay, current_bid)
-                 VALUES (?, ?, ?, ?, ?, ?, 0)`,
-                [userId, post.title, post.description, post.location, post.max_pay, post.type_of_pay]
+                `INSERT INTO posts (
+                    user_id, title, description, location, max_pay, type_of_pay, current_bid,
+                    place_id, locality, neighborhood, admin_area, lat, lng,
+                    address_formatted, address_lat, address_lng, address_visibility
+                ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    userId,
+                    post.title,
+                    post.description,
+                    post.location,
+                    post.max_pay,
+                    post.type_of_pay,
+                    post.place_id,
+                    post.locality || null,
+                    post.neighborhood || null,
+                    post.admin_area || null,
+                    post.lat,
+                    post.lng,
+                    post.address_formatted || null,
+                    post.address_lat || null,
+                    post.address_lng || null,
+                    post.address_visibility || 'after_hire',
+                ]
             );
             postsAdded += 1;
         }

@@ -110,10 +110,27 @@ async function main() {
       throw new Error(`auth rate limit expected 10, got ${badJson.headers['ratelimit-limit']}`);
     }
 
+    const places = await request('/api/places/autocomplete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': '2',
+      },
+      body: '{}',
+    });
+    if (![200, 503].includes(places.statusCode)) {
+      throw new Error(`POST /api/places/autocomplete expected 200 or 503, got ${places.statusCode}`);
+    }
+    if (places.headers['ratelimit-limit'] !== '40') {
+      throw new Error(`places rate limit expected 40, got ${places.headers['ratelimit-limit']}`);
+    }
+
     const noSession = [
       ['GET', '/api/me'],
       ['POST', '/api/addpost'],
       ['PUT', '/api/updatecurrentbid/1'],
+      ['PUT', '/api/acceptbid/1'],
+      ['GET', '/api/posts/1/address'],
       ['PUT', '/api/updateuser'],
       ['PUT', '/api/updatePassword'],
       ['DELETE', '/api/deletepostbyid'],

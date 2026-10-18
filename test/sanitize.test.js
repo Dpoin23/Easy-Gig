@@ -8,6 +8,10 @@ const {
     moneyField,
     payTypeField,
     searchField,
+    placeIdField,
+    addressVisibilityField,
+    radiusField,
+    latField,
 } = require('../lib/sanitize');
 
 describe('sanitize', () => {
@@ -46,5 +50,18 @@ describe('sanitize', () => {
         assert.deepEqual(searchField(undefined), { value: '' });
         assert.equal(searchField('mow '.repeat(80)).error, 'Search is too long');
         assert.equal(searchField(['mow']).error, 'Search must be text');
+    });
+
+    it('requires a place id when posting an area and allow-lists visibility and distance', () => {
+        assert.equal(placeIdField('', 'City or service area', true).error, 'City or service area is required');
+        assert.deepEqual(placeIdField('ChIJu46S-ZZhNVERPbYRyvn_V48', 'Place'), {
+            value: 'ChIJu46S-ZZhNVERPbYRyvn_V48',
+        });
+        assert.equal(placeIdField('not a place', 'Place').error, 'Place is invalid');
+        assert.deepEqual(addressVisibilityField('Public'), { value: 'public' });
+        assert.equal(addressVisibilityField('hidden').error, 'Address visibility is invalid');
+        assert.deepEqual(radiusField('10'), { value: 10 });
+        assert.equal(radiusField('12').error, 'Distance must be 5, 10, 25, or 50 miles');
+        assert.equal(latField('100').error, 'Latitude is invalid');
     });
 });

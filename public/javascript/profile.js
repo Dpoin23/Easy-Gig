@@ -240,17 +240,26 @@ function displayPosts(posts) {
 
             box.classList.add('display');
             box.classList.add('myposts');
-            box.innerHTML = `<div class="display-title">${post.title}</div>
+            const hireButton = post.current_bidder_id && !post.accepted_user_id
+                ? '<button class="display-input-button hire-button" type="button">Hire bidder</button>'
+                : '';
+            const hiredNote = post.accepted_user_id
+                ? '<div class="display-hired">A worker is hired. They can see the exact address.</div>'
+                : '';
+
+            box.innerHTML = `<div class="display-title">${escapeGigText(post.title)}</div>
                             <label><strong>Description</strong></label>
-                            <p class="display-description">${post.description}</p>
+                            <p class="display-description">${escapeGigText(post.description)}</p>
                             <div class="display-info">
-                                <div class="display-location">Location: ${post.location}</div>
-                                <div class="display-type">Type of Pay: ${post.type_of_pay}</div>
-                                <div class="display-pay">Pay: $${post.max_pay}</div>
+                                ${gigLocationHtml(post, { owner: true })}
+                                <div class="display-type">Type of Pay: ${escapeGigText(post.type_of_pay)}</div>
+                                <div class="display-pay">Pay: $${escapeGigText(post.max_pay)}</div>
                             </div>
+                            ${hiredNote}
                             <div class="display-bid">
-                                <div>Current Bid: $${post.current_bid}</div>
-                                <div>
+                                <div>Current Bid: $${escapeGigText(post.current_bid)}</div>
+                                <div class="myposts-actions">
+                                    ${hireButton}
                                     <form class="bid-form">
                                         <button class="display-input-button" type="submit">Delete</button>
                                     </form>
@@ -264,6 +273,13 @@ function displayPosts(posts) {
                 event.preventDefault();
                 deletePost(post.id, box);
             });
+
+            const hire = box.querySelector('.hire-button');
+            if (hire) {
+                hire.addEventListener('click', function() {
+                    hireBidder(post, box);
+                });
+            }
         });
         updateDisplayButton();
         sessionStorage.setItem("mypostsdisplay", "true");
@@ -288,6 +304,29 @@ function showPostsButton() {
     const button = document.getElementById('mypostsbutton');
     button.textContent = 'Show My Posts';
     sessionStorage.setItem('mypostsdisplay', 'false');
+}
+
+async function hireBidder(post, box) {
+    try {
+        const response = await fetch(`/api/acceptbid/${post.id}`, { method: 'PUT' });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            alert(body.error || 'Could not hire the current bidder.');
+            return;
+        }
+        post.accepted_user_id = body.accepted_user_id;
+        const note = document.createElement('div');
+        note.className = 'display-hired';
+        note.textContent = 'A worker is hired. They can see the exact address.';
+        box.querySelector('.display-info').after(note);
+        const hire = box.querySelector('.hire-button');
+        if (hire) {
+            hire.remove();
+        }
+        alert('Worker hired. The exact address is now available to them.');
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 async function deletePost(post_id, box) {
