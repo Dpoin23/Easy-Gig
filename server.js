@@ -5,6 +5,8 @@ const mysql = require('mysql2');
 const express = require('express');
 const cors = require('cors');
 const crypto = require('node:crypto');
+const fs = require('node:fs');
+const multer = require('multer');
 const { rateLimit } = require('express-rate-limit');
 const { rankPosts } = require('./lib/searchRank');
 const { findMatchingUser } = require('./lib/passwords');
@@ -35,6 +37,21 @@ const {
     clearSessionCookie,
 } = require('./lib/sessions');
 const {
+    MAX_POST_IMAGES,
+    MAX_IMAGE_BYTES,
+    PHOTO_LIMIT_MESSAGE,
+    PHOTO_SIZE_MESSAGE,
+    imageDirectory,
+    contentTypeForName,
+    imageFilePath,
+    attachImages,
+    reviewUploads,
+    writeImages,
+    removeStoredFiles,
+    ensurePostImagesTable,
+    publicImageList,
+} = require('./lib/postImages');
+const {
     textField,
     emailField,
     passwordField,
@@ -54,6 +71,24 @@ const {
 
 let dbReady = false;
 const secureCookies = process.env.NODE_ENV === 'production';
+const IMAGE_DIR = imageDirectory(__dirname);
+
+try {
+    fs.mkdirSync(IMAGE_DIR, { recursive: true });
+} catch (err) {
+    console.error('Could not create photo directory:', err.message);
+}
+
+const uploadPostImages = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        files: MAX_POST_IMAGES,
+        fileSize: MAX_IMAGE_BYTES,
+        fields: 16,
+        fieldSize: 2048,
+        parts: MAX_POST_IMAGES + 16,
+    },
+});
 
 // Connect
 var db = mysql.createConnection(dbConfig());
@@ -90,8 +125,14 @@ db.connect((err) => {
                         console.error('Could not create bids table:', bidsErr.message);
                         return;
                     }
-                    dbReady = true;
-                    console.log('mysql connected to easy_gig');
+                    ensurePostImagesTable(db, (imagesErr) => {
+                        if (imagesErr) {
+                            console.error('Could not create post images table:', imagesErr.message);
+                            return;
+                        }
+                        dbReady = true;
+                        console.log('mysql connected to easy_gig');
+                    });
                 });
             });
         }
@@ -345,6 +386,92 @@ function runQuery(res, sql, params, onSuccess) {
     });
 }
 
+function acceptPostImages(req, res, next) {
+    const type = String(req.headers['content-type'] || '');
+    if (!type.includes('multipart/form-data')) {
+        next();
+        return;
+    }
+
+    uploadPostImages.array('images', MAX_POST_IMAGES)(req, res, (err) => {
+        if (!err) {
+            next();
+            return;
+        }
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                sendError(res, 400, PHOTO_SIZE_MESSAGE);
+                return;
+            }
+            if (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE') {
+                sendError(res, 400, PHOTO_LIMIT_MESSAGE);
+                return;
+            }
+        }
+        sendError(res, 400, 'Could not read the photos');
+    });
+}
+
+function withPostImages(posts, done) {
+    const list = posts || [];
+    const ids = [...new Set(list.map((post) => Number(post.id)).filter((id) => Number.isInteger(id) && id > 0))];
+    if (ids.length === 0) {
+        done(null, attachImages(list, []));
+        return;
+    }
+    const marks = ids.map(() => '?').join(', ');
+    db.query(
+        `SELECT id, post_id, stored_name, sort_order
+         FROM post_images
+         WHERE post_id IN (${marks})
+         ORDER BY sort_order ASC, id ASC`,
+        ids,
+        (err, rows) => {
+            if (err) {
+                done(err);
+                return;
+            }
+            done(null, attachImages(list, rows));
+        }
+    );
+}
+
+function purgePostImages(postIds, done) {
+    const ids = [...new Set((postIds || []).map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))];
+    if (ids.length === 0) {
+        done(null);
+        return;
+    }
+    const marks = ids.map(() => '?').join(', ');
+    db.query(
+        `SELECT stored_name FROM post_images WHERE post_id IN (${marks})`,
+        ids,
+        (selectErr, rows) => {
+            if (selectErr) {
+                done(selectErr);
+                return;
+            }
+            db.query(
+                `DELETE FROM post_images WHERE post_id IN (${marks})`,
+                ids,
+                (deleteErr) => {
+                    if (!deleteErr) {
+                        removeStoredFiles(IMAGE_DIR, (rows || []).map((row) => row.stored_name));
+                    }
+                    done(deleteErr || null);
+                }
+            );
+        }
+    );
+}
+
+function discardNewPost(postId, storedNames, done) {
+    removeStoredFiles(IMAGE_DIR, storedNames);
+    db.query('DELETE FROM post_images WHERE post_id = ?', [postId], () => {
+        db.query('DELETE FROM posts WHERE id = ?', [postId], () => done());
+    });
+}
+
 // Create database
 app.get('/createdb', (req, res) => {
     runQuery(res, 'CREATE DATABASE easy_gig', [], (result) => {
@@ -475,7 +602,26 @@ app.post('/api/adduser', (req, res) => {
     });
 });
 
-app.post('/api/addpost', async (req, res) => {
+app.get('/uploads/posts/:name', (req, res) => {
+    const storedName = req.params.name;
+    const filePath = imageFilePath(IMAGE_DIR, storedName);
+    const contentType = contentTypeForName(storedName);
+    if (!filePath || !contentType) {
+        res.status(404).end();
+        return;
+    }
+
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.sendFile(filePath, { dotfiles: 'deny' }, (err) => {
+        if (err && !res.headersSent) {
+            res.status(404).end();
+        }
+    });
+});
+
+app.post('/api/addpost', acceptPostImages, async (req, res) => {
     const body = req.body || {};
     const title = readField(res, textField(body.title, 'Title'));
     const description = readField(res, textField(body.description, 'Description'));
@@ -489,6 +635,14 @@ app.post('/api/addpost', async (req, res) => {
     if (res.headersSent || [title, description, pay, payType, areaPlaceId, addressVisibility].some((value) => value == null)) {
         return;
     }
+
+    const uploads = (req.files || []).filter((file) => file && file.buffer && file.buffer.length > 0);
+    const reviewed = reviewUploads(uploads, 0);
+    if (reviewed.error) {
+        sendError(res, reviewed.status || 400, reviewed.error);
+        return;
+    }
+
     if (!placesConfigured()) {
         sendError(res, 503, 'Location lookup is not configured');
         return;
@@ -513,12 +667,53 @@ app.post('/api/addpost', async (req, res) => {
             INSERT_POST_SQL,
             insertPostParams({ title, description, pay, payType, userId: req.userId }, resolved.value),
             (result) => {
-                res.json({
+                const postId = result.insertId;
+                const created = {
                     ok: true,
-                    insertId: result.insertId,
+                    insertId: postId,
                     location,
                     address_visibility: visibility,
                     has_precise_address: Boolean(address),
+                    images: [],
+                };
+                if (reviewed.value.length === 0) {
+                    res.json(created);
+                    return;
+                }
+
+                writeImages(IMAGE_DIR, reviewed.value, 0).then((written) => {
+                    if (written.error) {
+                        discardNewPost(postId, [], () => {
+                            sendError(res, 500, written.error);
+                        });
+                        return;
+                    }
+
+                    const marks = written.value.map(() => '(?, ?, ?)').join(', ');
+                    const params = [];
+                    for (const image of written.value) {
+                        params.push(postId, image.stored_name, image.sort_order);
+                    }
+                    db.query(
+                        `INSERT INTO post_images (post_id, stored_name, sort_order) VALUES ${marks}`,
+                        params,
+                        (insertErr) => {
+                            if (insertErr) {
+                                console.error(insertErr.code || 'query', insertErr.message);
+                                discardNewPost(postId, written.value.map((image) => image.stored_name), () => {
+                                    sendError(res, 500, 'Could not save photos');
+                                });
+                                return;
+                            }
+                            created.images = publicImageList(written.value);
+                            res.json(created);
+                        }
+                    );
+                }).catch((err) => {
+                    console.error(err);
+                    discardNewPost(postId, [], () => {
+                        sendError(res, 500, 'Could not save photos');
+                    });
                 });
             }
         );
@@ -628,10 +823,17 @@ app.get('/api/getuser', (req, res) => {
 });
 
 function sendRankedPosts(res, posts, search, mode, viewerId, origin) {
-    const ranked = rankPosts(posts, search, mode);
-    res.json({
-        relevant: redactPosts(ranked.relevant, viewerId, origin),
-        related: redactPosts(ranked.related, viewerId, origin),
+    withPostImages(posts, (err, ready) => {
+        if (err) {
+            console.error(err.code || 'query', err.message);
+            sendError(res, 500, 'Database error');
+            return;
+        }
+        const ranked = rankPosts(ready, search, mode);
+        res.json({
+            relevant: redactPosts(ranked.relevant, viewerId, origin),
+            related: redactPosts(ranked.related, viewerId, origin),
+        });
     });
 }
 
@@ -684,9 +886,16 @@ async function searchByLocation(req, res) {
     runQuery(res, 'SELECT * FROM posts', [], (result) => {
         if (origin) {
             const nearby = filterByRadius(result, origin, radius);
-            res.json({
-                relevant: redactPosts(nearby, req.userId, origin),
-                related: [],
+            withPostImages(nearby, (err, ready) => {
+                if (err) {
+                    console.error(err.code || 'query', err.message);
+                    sendError(res, 500, 'Database error');
+                    return;
+                }
+                res.json({
+                    relevant: redactPosts(ready, req.userId, origin),
+                    related: [],
+                });
             });
             return;
         }
@@ -724,7 +933,14 @@ app.get('/api/getpostsbyuserid', (req, res) => {
          WHERE user_id = ?`,
         [userId],
         (result) => {
-            res.json(redactPosts(result, req.userId));
+            withPostImages(result, (err, ready) => {
+                if (err) {
+                    console.error(err.code || 'query', err.message);
+                    sendError(res, 500, 'Database error');
+                    return;
+                }
+                res.json(redactPosts(ready, req.userId));
+            });
         }
     );
 });
@@ -952,20 +1168,34 @@ app.get('/api/bidders/:userId', (req, res) => {
                                 'SELECT * FROM posts WHERE accepted_user_id = ? ORDER BY id DESC',
                                 [bidderId],
                                 (selected) => {
-                                    res.json({
-                                        id: bidderId,
-                                        name: bid.name,
-                                        post_id: postId,
-                                        post_title: post.title,
-                                        can_hire: !post.accepted_user_id,
-                                        hired: Number(post.accepted_user_id) === Number(bidderId),
-                                        bid: {
-                                            id: bid.id,
-                                            amount: Number(bid.amount),
-                                            created_at: bid.created_at,
-                                        },
-                                        posted_gigs: profileGigs(posted, req.userId),
-                                        selected_gigs: profileGigs(selected, req.userId),
+                                    withPostImages(posted, (postedErr, postedReady) => {
+                                        if (postedErr) {
+                                            console.error(postedErr.code || 'query', postedErr.message);
+                                            sendError(res, 500, 'Database error');
+                                            return;
+                                        }
+                                        withPostImages(selected, (selectedErr, selectedReady) => {
+                                            if (selectedErr) {
+                                                console.error(selectedErr.code || 'query', selectedErr.message);
+                                                sendError(res, 500, 'Database error');
+                                                return;
+                                            }
+                                            res.json({
+                                                id: bidderId,
+                                                name: bid.name,
+                                                post_id: postId,
+                                                post_title: post.title,
+                                                can_hire: !post.accepted_user_id,
+                                                hired: Number(post.accepted_user_id) === Number(bidderId),
+                                                bid: {
+                                                    id: bid.id,
+                                                    amount: Number(bid.amount),
+                                                    created_at: bid.created_at,
+                                                },
+                                                posted_gigs: profileGigs(postedReady, req.userId),
+                                                selected_gigs: profileGigs(selectedReady, req.userId),
+                                            });
+                                        });
                                     });
                                 }
                             );
@@ -983,7 +1213,14 @@ app.get('/api/me/selected', (req, res) => {
         'SELECT * FROM posts WHERE accepted_user_id = ? ORDER BY id DESC',
         [req.userId],
         (rows) => {
-            res.json(profileGigs(rows, req.userId));
+            withPostImages(rows, (err, ready) => {
+                if (err) {
+                    console.error(err.code || 'query', err.message);
+                    sendError(res, 500, 'Database error');
+                    return;
+                }
+                res.json(profileGigs(ready, req.userId));
+            });
         }
     );
 });
@@ -1162,14 +1399,21 @@ app.delete('/api/deletepostbyid', (req, res) => {
                 return;
             }
             runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
-                runQuery(
-                    res,
-                    'DELETE FROM posts WHERE id = ? AND user_id = ?',
-                    [postId, req.userId],
-                    (result) => {
-                        res.json(result);
+                purgePostImages([postId], (purgeErr) => {
+                    if (purgeErr) {
+                        console.error(purgeErr.code || 'query', purgeErr.message);
+                        sendError(res, 500, 'Database error');
+                        return;
                     }
-                );
+                    runQuery(
+                        res,
+                        'DELETE FROM posts WHERE id = ? AND user_id = ?',
+                        [postId, req.userId],
+                        (result) => {
+                            res.json(result);
+                        }
+                    );
+                });
             });
         }
     );
@@ -1191,12 +1435,21 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
                      WHERE posts.user_id = ?`,
                     [userId],
                     () => {
-                        runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], () => {
-                            refreshLeadingBids(res, postIds, () => {
-                                runQuery(res, 'DELETE FROM sessions WHERE user_id = ?', [userId], () => {
-                                    runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
-                                        res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
-                                        res.json(result);
+                        runQuery(res, 'SELECT id FROM posts WHERE user_id = ?', [userId], (owned) => {
+                            purgePostImages(owned.map((row) => row.id), (purgeErr) => {
+                                if (purgeErr) {
+                                    console.error(purgeErr.code || 'query', purgeErr.message);
+                                    sendError(res, 500, 'Database error');
+                                    return;
+                                }
+                                runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [userId], () => {
+                                    refreshLeadingBids(res, postIds, () => {
+                                        runQuery(res, 'DELETE FROM sessions WHERE user_id = ?', [userId], () => {
+                                            runQuery(res, 'DELETE FROM users WHERE id = ?', [userId], (result) => {
+                                                res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
+                                                res.json(result);
+                                            });
+                                        });
                                     });
                                 });
                             });
@@ -1209,18 +1462,28 @@ app.delete('/api/deleteaccountbyid', (req, res) => {
 });
 
 app.delete('/api/deletealluserposts', (req, res) => {
-    runQuery(
-        res,
-        `DELETE bids FROM bids
-         INNER JOIN posts ON posts.id = bids.post_id
-         WHERE posts.user_id = ?`,
-        [req.userId],
-        () => {
-            runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [req.userId], (result) => {
-                res.json(result);
-            });
-        }
-    );
+    runQuery(res, 'SELECT id FROM posts WHERE user_id = ?', [req.userId], (owned) => {
+        const ids = owned.map((row) => row.id);
+        runQuery(
+            res,
+            `DELETE bids FROM bids
+             INNER JOIN posts ON posts.id = bids.post_id
+             WHERE posts.user_id = ?`,
+            [req.userId],
+            () => {
+                purgePostImages(ids, (purgeErr) => {
+                    if (purgeErr) {
+                        console.error(purgeErr.code || 'query', purgeErr.message);
+                        sendError(res, 500, 'Database error');
+                        return;
+                    }
+                    runQuery(res, 'DELETE FROM posts WHERE user_id = ?', [req.userId], (result) => {
+                        res.json(result);
+                    });
+                });
+            }
+        );
+    });
 });
 
 app.get('/deletepost/:id', (req, res) => {
@@ -1230,17 +1493,21 @@ app.get('/deletepost/:id', (req, res) => {
     }
 
     runQuery(res, 'DELETE FROM bids WHERE post_id = ?', [postId], () => {
-        runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
-            console.log(result);
-            res.send('post1 deleted');
+        purgePostImages([postId], () => {
+            runQuery(res, 'DELETE FROM posts WHERE id = ?', [postId], (result) => {
+                console.log(result);
+                res.send('post1 deleted');
+            });
         });
     });
 });
 
 app.get('/deletespecificpostfortesting', (req, res) => {
-    runQuery(res, 'DELETE FROM posts WHERE id = 3', [], (result) => {
-        console.log(result);
-        res.send('post deleted');
+    purgePostImages([3], () => {
+        runQuery(res, 'DELETE FROM posts WHERE id = 3', [], (result) => {
+            console.log(result);
+            res.send('post deleted');
+        });
     });
 });
 

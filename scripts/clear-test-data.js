@@ -18,8 +18,10 @@
  * Those posts predate real locations and never show up in distance search.
  */
 
+const path = require('node:path');
 const mysql = require('mysql2/promise');
 const { loadEnv } = require('../lib/loadEnv');
+const { imageDirectory, removeStoredFiles } = require('../lib/postImages');
 
 loadEnv();
 
@@ -135,8 +137,19 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
     const userIds = users.map((user) => user.id);
     const postIds = posts.map((post) => post.id);
 
+    const imageDir = imageDirectory(path.join(__dirname, '..'));
+    let imageNames = [];
+
     await conn.beginTransaction();
     try {
+        if (tables.has('post_images') && postIds.length > 0) {
+            const [images] = await conn.query(
+                'SELECT stored_name FROM post_images WHERE post_id IN (?)',
+                [postIds]
+            );
+            imageNames = images.map((row) => row.stored_name);
+            await conn.query('DELETE FROM post_images WHERE post_id IN (?)', [postIds]);
+        }
         if (tables.has('bids') && (postIds.length > 0 || userIds.length > 0)) {
             if (postIds.length > 0) {
                 await conn.query('DELETE FROM bids WHERE post_id IN (?)', [postIds]);
@@ -167,6 +180,8 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
         await conn.rollback();
         throw err;
     }
+
+    removeStoredFiles(imageDir, imageNames);
 }
 
 async function main() {

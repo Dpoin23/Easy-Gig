@@ -83,6 +83,7 @@ describe('postLocation', () => {
         assert.equal(publicView.has_precise_address, true);
         assert.equal(publicView.address_shared_when, 'after_hire');
         assert.equal(publicView.location, 'Capitol Hill, Seattle, WA');
+        assert.deepEqual(publicView.images, []);
         assert.ok(!('address_formatted' in publicView));
         assert.ok(!('address_lat' in publicView));
         assert.ok(!('current_bidder_id' in publicView));
@@ -95,6 +96,19 @@ describe('postLocation', () => {
         const hired = publicPostView({ ...seattle, accepted_user_id: 22 }, 22);
         assert.equal(hired.precise_address, '123 Pike St, Seattle, WA 98101');
         assert.equal(hired.is_hired, true);
+    });
+
+    it('includes saved gig photos and drops unsafe names', () => {
+        const name = `${'ab'.repeat(16)}.png`;
+        const view = publicPostView({
+            ...seattle,
+            images: [
+                { stored_name: name },
+                { stored_name: '../server.js' },
+                { url: 'https://evil.example/a.png' },
+            ],
+        }, null);
+        assert.deepEqual(view.images, [{ url: `/uploads/posts/${name}` }]);
     });
 
     it('includes a public street address in the public view', () => {

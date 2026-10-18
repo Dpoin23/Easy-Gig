@@ -82,6 +82,10 @@ async function main() {
     if (home.statusCode !== 200) {
       throw new Error(`GET / expected 200, got ${home.statusCode}`);
     }
+    const missingPhoto = await request('/uploads/posts/not-a-real-photo');
+    if (missingPhoto.statusCode !== 404) {
+      throw new Error(`GET missing gig photo expected 404, got ${missingPhoto.statusCode}`);
+    }
     if (home.headers['ratelimit-limit']) {
       throw new Error('static files should not be rate limited');
     }
