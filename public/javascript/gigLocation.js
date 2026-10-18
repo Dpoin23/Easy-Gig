@@ -1,4 +1,4 @@
-/* exported gigLocationHtml, gigAreaLabel, escapeGigText, formatGigMoney, gigHistoryHtml */
+/* exported gigLocationHtml, gigAreaLabel, escapeGigText, formatGigMoney, gigHistoryHtml, gigImagesHtml */
 
 function escapeGigText(value) {
     return String(value ?? '')
@@ -40,6 +40,22 @@ function gigLocationHtml(point, options) {
     return parts.join('');
 }
 
+function gigImagesHtml(point) {
+    const images = Array.isArray(point.images) ? point.images : [];
+    const photos = images.map((image) => {
+        const url = image && typeof image.url === 'string' ? image.url : '';
+        if (!/^\/uploads\/posts\/[a-f0-9]{32}\.(?:jpg|png|webp|gif)$/.test(url)) {
+            return '';
+        }
+        const safeUrl = escapeGigText(url);
+        return `<a class="display-photo-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img class="display-photo" src="${safeUrl}" alt="Gig photo"></a>`;
+    }).filter(Boolean);
+    if (photos.length === 0) {
+        return '';
+    }
+    return `<div class="display-photos">${photos.join('')}</div>`;
+}
+
 function formatGigMoney(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount)) {
@@ -55,6 +71,7 @@ function gigHistoryHtml(point) {
     return `<div class="display-title">${escapeGigText(point.title)}</div>
             <label><strong>Description</strong></label>
             <p class="display-description">${escapeGigText(point.description)}</p>
+            ${gigImagesHtml(point)}
             <div class="display-info">
                 ${gigLocationHtml(point)}
                 <div class="display-type">Type of Pay: ${escapeGigText(point.type_of_pay)}</div>
@@ -71,3 +88,4 @@ window.gigAreaLabel = gigAreaLabel;
 window.gigLocationHtml = gigLocationHtml;
 window.formatGigMoney = formatGigMoney;
 window.gigHistoryHtml = gigHistoryHtml;
+window.gigImagesHtml = gigImagesHtml;

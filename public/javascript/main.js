@@ -100,6 +100,7 @@ function appendPost(results, point) {
     box.innerHTML = `<div class="display-title">${escapeHtml(point.title)}</div>
                     <label><strong>Description</strong></label>
                     <p class="display-description">${escapeHtml(point.description)}</p>
+                    ${gigImagesHtml(point)}
                     <div class="display-info">
                         ${gigLocationHtml(point)}
                         <div class="display-type">Type of Pay: ${escapeHtml(point.type_of_pay)}</div>

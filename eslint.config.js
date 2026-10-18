@@ -61,6 +61,7 @@ module.exports = [
         escapeGigText: 'readonly',
         formatGigMoney: 'readonly',
         gigHistoryHtml: 'readonly',
+        gigImagesHtml: 'readonly',
       },
     },
   },

@@ -248,6 +248,7 @@ function displayPosts(posts) {
             box.innerHTML = `<div class="display-title">${escapeGigText(post.title)}</div>
                             <label><strong>Description</strong></label>
                             <p class="display-description">${escapeGigText(post.description)}</p>
+                            ${gigImagesHtml(post)}
                             <div class="display-info">
                                 ${gigLocationHtml(post, { owner: true })}
                                 <div class="display-type">Type of Pay: ${escapeGigText(post.type_of_pay)}</div>
