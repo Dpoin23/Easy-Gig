@@ -1,4 +1,4 @@
-/* exported gigLocationHtml, gigAreaLabel, escapeGigText */
+/* exported gigLocationHtml, gigAreaLabel, escapeGigText, formatGigMoney, gigHistoryHtml */
 
 function escapeGigText(value) {
     return String(value ?? '')
@@ -40,6 +40,34 @@ function gigLocationHtml(point, options) {
     return parts.join('');
 }
 
+function formatGigMoney(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) {
+        return '';
+    }
+    return amount.toFixed(2);
+}
+
+function gigHistoryHtml(point) {
+    const filled = point.was_filled
+        ? '<div class="display-hired">This gig was filled.</div>'
+        : '';
+    return `<div class="display-title">${escapeGigText(point.title)}</div>
+            <label><strong>Description</strong></label>
+            <p class="display-description">${escapeGigText(point.description)}</p>
+            <div class="display-info">
+                ${gigLocationHtml(point)}
+                <div class="display-type">Type of Pay: ${escapeGigText(point.type_of_pay)}</div>
+                <div class="display-pay">Pay: $${escapeGigText(formatGigMoney(point.max_pay))}</div>
+            </div>
+            ${filled}
+            <div class="display-bid">
+                <div>Current Bid: $${escapeGigText(formatGigMoney(point.current_bid))}</div>
+            </div>`;
+}
+
 window.escapeGigText = escapeGigText;
 window.gigAreaLabel = gigAreaLabel;
 window.gigLocationHtml = gigLocationHtml;
+window.formatGigMoney = formatGigMoney;
+window.gigHistoryHtml = gigHistoryHtml;

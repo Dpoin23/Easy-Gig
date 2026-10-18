@@ -51,6 +51,7 @@ module.exports = [
       'public/javascript/main.js',
       'public/javascript/post.js',
       'public/javascript/profile.js',
+      'public/javascript/bidder.js',
     ],
     languageOptions: {
       globals: {
@@ -58,6 +59,8 @@ module.exports = [
         gigLocationHtml: 'readonly',
         gigAreaLabel: 'readonly',
         escapeGigText: 'readonly',
+        formatGigMoney: 'readonly',
+        gigHistoryHtml: 'readonly',
       },
     },
   },

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bidder profile · Easy Gig</title>
+
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+
+<body class="profile-body">
+    <div class="Header" id="header">
+        <div class="Header-image"><a href="index.html"><img src="images/Logo.png" width="130" height="48" alt="Easy Gig"/></a></div>
+        <div class="Header-obj"><a href="index.html">Home</a></div>
+        <div class="Header-obj"><a href="post.html">Post</a></div>
+        <div class="Header-account" id="account-menu">
+            <button type="button" class="account-toggle" id="account-toggle" aria-expanded="false" aria-haspopup="true" aria-controls="account-panel">Account</button>
+            <div class="account-panel" id="account-panel" hidden></div>
+        </div>
+    </div>
+
+    <hr class="topline"/>
+
+    <div class="bidder-back"><a href="profile.html">Back to my posts</a></div>
+    <div class="createacc-box profile-box" id="bidder-profile"></div>
+    <div id="bidder-gigs"></div>
+
+    <script src="javascript/updateHeaderScript.js"></script>
+    <script src="javascript/gigLocation.js"></script>
+    <script src="javascript/bidder.js"></script>
+</body>
+</html>

@@ -123,11 +123,17 @@ function appendPost(results, point) {
         const event_data = new FormData(this);
         const bid = parseFloat(event_data.get('bid'));
 
-        if ((point.current_bid == 0 && bid <= point.max_pay) || (point.current_bid != 0 && bid < point.current_bid)) {
-            updateBid(point, bid);
-        } else {
-            alert('Bid is not valid.');
+        const current = Number(point.current_bid);
+        const maxPay = Number(point.max_pay);
+        if (!(bid > 0) || bid > maxPay) {
+            alert('Bid must be greater than zero and no higher than the listed pay.');
+            return;
         }
+        if (current > 0 && bid >= current) {
+            alert('Bid must be lower than the current bid.');
+            return;
+        }
+        updateBid(point, bid);
     });
 }
 
