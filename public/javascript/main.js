@@ -93,6 +93,49 @@ function escapeHtml(value) {
     return escapeGigText(value);
 }
 
+function currentUserId() {
+    try {
+        const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+        const id = user && Number(user.id);
+        return Number.isInteger(id) && id > 0 ? id : null;
+    } catch {
+        return null;
+    }
+}
+
+function canMessagePost(point) {
+    if (point.is_owner) {
+        return false;
+    }
+    const userId = currentUserId();
+    return userId == null || Number(point.user_id) !== userId;
+}
+
+async function openConversation(postId) {
+    try {
+        const response = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId: postId }),
+        });
+        if (response.status === 401) {
+            alert('Sign in to message the poster.');
+            window.location.href = 'signin.html';
+            return;
+        }
+        const body = await response.json().catch(function() {
+            return {};
+        });
+        if (!response.ok) {
+            alert(body.error || 'Could not open that conversation.');
+            return;
+        }
+        window.location.href = `messages.html?conversation=${encodeURIComponent(body.id)}`;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 function appendPost(results, point) {
     const box = document.createElement('div');
 
@@ -115,6 +158,20 @@ function appendPost(results, point) {
                             </form>
                         </div>
                     </div>`;
+
+    if (canMessagePost(point)) {
+        const actions = document.createElement('div');
+        actions.className = 'display-message';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'display-input-button message-poster';
+        button.textContent = 'Message';
+        button.addEventListener('click', function() {
+            openConversation(point.id);
+        });
+        actions.appendChild(button);
+        box.appendChild(actions);
+    }
 
     results.appendChild(box);
 

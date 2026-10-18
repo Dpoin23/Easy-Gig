@@ -8,6 +8,8 @@ function clearSignedIn() {
     sessionStorage.setItem("signedIn", "false");
     sessionStorage.setItem('mypostsdisplay', 'false');
     sessionStorage.removeItem('user');
+    stopUnreadPoll();
+    setUnreadBadge(0);
 }
 
 function signout() {
@@ -21,6 +23,7 @@ function accountItems(signedIn) {
     if (signedIn) {
         return [
             { href: 'profile.html', label: 'Profile' },
+            { href: 'messages.html', label: 'Messages' },
             { href: 'changePassword.html', label: 'Change Password' },
             { href: 'about.html', label: 'About' },
             { href: 'createacc.html', label: 'Create Account' },
@@ -98,10 +101,89 @@ async function syncSession() {
         sessionStorage.setItem("signedIn", "true");
         sessionStorage.setItem('user', JSON.stringify(user));
         renderAccountItems(true);
+        startUnreadPoll();
     } catch (error) {
         console.error(error);
     }
 }
+
+let unreadTimer = null;
+
+function stopUnreadPoll() {
+    if (unreadTimer) {
+        clearInterval(unreadTimer);
+        unreadTimer = null;
+    }
+}
+
+function setUnreadBadge(count) {
+    const n = Number(count) || 0;
+    const link = document.querySelector('#account-panel a[href="messages.html"]');
+    if (link) {
+        link.textContent = n > 0 ? `Messages (${n})` : 'Messages';
+    }
+
+    const toggle = document.getElementById('account-toggle');
+    if (!toggle) {
+        return;
+    }
+    let badge = toggle.querySelector('.unread-badge');
+    if (n <= 0) {
+        if (badge) {
+            badge.remove();
+        }
+        return;
+    }
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'unread-badge';
+        toggle.appendChild(badge);
+    }
+    badge.textContent = n > 99 ? '99+' : String(n);
+}
+
+function refreshUnreadCount() {
+    if (document.hidden || sessionStorage.getItem('signedIn') !== 'true') {
+        return;
+    }
+
+    fetch('/api/messages/unread-count')
+        .then(function(response) {
+            if (response.status === 401) {
+                stopUnreadPoll();
+                setUnreadBadge(0);
+                return null;
+            }
+            if (!response.ok) {
+                return null;
+            }
+            return response.json();
+        })
+        .then(function(body) {
+            if (body) {
+                setUnreadBadge(body.unread);
+            }
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
+}
+
+function startUnreadPoll() {
+    stopUnreadPoll();
+    refreshUnreadCount();
+    unreadTimer = setInterval(refreshUnreadCount, 45000);
+}
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        stopUnreadPoll();
+        return;
+    }
+    if (sessionStorage.getItem('signedIn') === 'true') {
+        startUnreadPoll();
+    }
+});
 
 renderAccountItems(sessionStorage.getItem("signedIn") === "true");
 bindAccountMenu();
