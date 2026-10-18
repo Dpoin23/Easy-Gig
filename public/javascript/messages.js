@@ -1,6 +1,8 @@
 const POLL_MS = 5000;
 
 const inboxList = document.getElementById('inbox-list');
+const reviewPrompts = document.getElementById('review-prompts');
+const threadReview = document.getElementById('thread-review');
 const threadTitle = document.getElementById('thread-title');
 const threadWith = document.getElementById('thread-with');
 const threadMessages = document.getElementById('thread-messages');
@@ -9,6 +11,7 @@ const threadForm = document.getElementById('thread-form');
 const threadBody = document.getElementById('thread-body');
 
 let inbox = [];
+let pendingReviews = [];
 let openId = null;
 let lastMessageId = 0;
 let pollTimer = null;
@@ -114,6 +117,82 @@ function markInboxOpen() {
     });
 }
 
+function promptForConversation(id) {
+    return pendingReviews.find(function(prompt) {
+        return prompt.conversationId === id;
+    }) || null;
+}
+
+function loosePrompts() {
+    return pendingReviews.filter(function(prompt) {
+        if (!prompt.conversationId) {
+            return true;
+        }
+        return !inbox.some(function(item) {
+            return item.id === prompt.conversationId;
+        });
+    });
+}
+
+function showThreadReview(id) {
+    if (!threadReview) {
+        return;
+    }
+    const prompt = promptForConversation(id);
+    threadReview.hidden = !prompt;
+    threadReview.replaceChildren();
+    if (!prompt) {
+        return;
+    }
+    mountReviewForm(threadReview, prompt, async function() {
+        pendingReviews = pendingReviews.filter(function(item) {
+            return item.postId !== prompt.postId;
+        });
+        showThreadReview(id);
+        renderReviewPrompts();
+        renderInbox();
+        if (typeof refreshUnreadCount === 'function') {
+            refreshUnreadCount();
+        }
+    });
+}
+
+function renderReviewPrompts() {
+    if (!reviewPrompts) {
+        return;
+    }
+    reviewPrompts.replaceChildren();
+    const loose = loosePrompts();
+    if (loose.length === 0 && pendingReviews.length === 0) {
+        return;
+    }
+
+    if (pendingReviews.length > 0) {
+        const note = document.createElement('p');
+        note.className = 'review-inbox-note';
+        note.textContent = pendingReviews.length === 1
+            ? 'A finished gig is ready for your review.'
+            : `${pendingReviews.length} finished gigs are ready for your review.`;
+        reviewPrompts.append(note);
+    }
+
+    loose.forEach(function(prompt) {
+        const card = document.createElement('div');
+        card.className = 'review-prompt-card';
+        mountReviewForm(card, prompt, function() {
+            pendingReviews = pendingReviews.filter(function(item) {
+                return item.postId !== prompt.postId;
+            });
+            renderReviewPrompts();
+            renderInbox();
+            if (typeof refreshUnreadCount === 'function') {
+                refreshUnreadCount();
+            }
+        });
+        reviewPrompts.append(card);
+    });
+}
+
 function renderInbox() {
     inboxList.replaceChildren();
     if (inbox.length === 0) {
@@ -146,6 +225,12 @@ function renderInbox() {
         preview.textContent = item.lastMessage || 'No messages yet';
 
         button.append(name, title, preview);
+        if (promptForConversation(item.id)) {
+            const review = document.createElement('span');
+            review.className = 'inbox-review';
+            review.textContent = 'Review';
+            button.append(review);
+        }
         if (item.unreadCount > 0) {
             const badge = document.createElement('span');
             badge.className = 'inbox-unread';
@@ -172,6 +257,8 @@ async function loadInbox() {
         return false;
     }
     inbox = body.conversations || [];
+    pendingReviews = await loadPendingReviews();
+    renderReviewPrompts();
     renderInbox();
     if (openId) {
         showHeading(openId);
@@ -240,6 +327,7 @@ async function openThread(id) {
     stopThreadPoll();
     threadMessages.replaceChildren();
     threadForm.hidden = false;
+    showThreadReview(id);
     setThreadStatus('');
     showHeading(id);
     markInboxOpen();

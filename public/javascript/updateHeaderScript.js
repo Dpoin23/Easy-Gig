@@ -161,7 +161,7 @@ function refreshUnreadCount() {
         })
         .then(function(body) {
             if (body) {
-                setUnreadBadge(body.unread);
+                setUnreadBadge((Number(body.unread) || 0) + (Number(body.reviewPrompts) || 0));
             }
         })
         .catch(function(error) {

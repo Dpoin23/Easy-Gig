@@ -13,6 +13,9 @@ profileBox.innerHTML = `<form id="edit-profile-form">
                                 <li class="createacc-li"><strong>Email Address</strong></li>
                                 <li class="createacc-li profile-notediting-li" id="email-li"></li>
 
+                                <li class="createacc-li"><strong>Rating</strong></li>
+                                <li class="createacc-li profile-notediting-li" id="rating-li">No reviews</li>
+
                                 <li class="createacc-button-div profile-buttons">
                                     <button class="createacc-button" type="submit" id="button-li">Edit</button>
                                 </li>
@@ -42,6 +45,41 @@ async function loadProfile() {
         sessionStorage.setItem('user', JSON.stringify(user));
         document.getElementById('name-li').textContent = user.name;
         document.getElementById('email-li').textContent = user.email;
+        showOwnReviews(user.rating, user.reviews);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function showOwnReviews(rating, reviews) {
+    const ratingLi = document.getElementById('rating-li');
+    if (ratingLi) {
+        ratingLi.replaceChildren(renderRatingSummary(rating));
+    }
+    const list = document.getElementById('profile-reviews');
+    if (!list) {
+        return;
+    }
+    list.replaceChildren();
+    if (!reviews || reviews.length === 0) {
+        return;
+    }
+    const heading = document.createElement('h2');
+    heading.className = 'bidder-section-title';
+    heading.textContent = 'Reviews';
+    const cards = document.createElement('div');
+    renderReviewList(reviews, cards);
+    list.append(heading, cards);
+}
+
+async function refreshOwnRating() {
+    try {
+        const response = await fetch('/api/me');
+        if (!response.ok) {
+            return;
+        }
+        const user = await response.json();
+        showOwnReviews(user.rating, user.reviews);
     } catch (error) {
         console.error(error);
     }
@@ -213,7 +251,8 @@ postsform.addEventListener('submit', async function(event) {
         sessionStorage.setItem('mypostsdisplay', 'false');
     } else {
         const posts = await getUserPosts();
-        displayPosts(posts);
+        const pending = await loadPendingReviews();
+        displayPosts(posts, pending);
     }
 });
 
@@ -232,8 +271,153 @@ async function getUserPosts() {
     }
 }
 
-function displayPosts(posts) {
-    if (posts.length != 0) {
+function pendingForPost(pending, postId, role) {
+    return (pending || []).find(function(item) {
+        return Number(item.postId) === Number(postId) && (!role || item.role === role);
+    }) || null;
+}
+
+function hiredNoteHtml(post) {
+    if (post.completed) {
+        return '<div class="display-hired">This gig is complete and no longer shows up in search.</div>';
+    }
+    if (post.accepted_user_id) {
+        return '<div class="display-hired">A worker is hired. They can see the exact address.</div>';
+    }
+    return '';
+}
+
+function syncHiredNote(box, post) {
+    const existing = box.querySelector('.display-hired');
+    const html = hiredNoteHtml(post);
+    if (!html) {
+        if (existing) {
+            existing.remove();
+        }
+        return;
+    }
+    if (existing) {
+        existing.textContent = post.completed
+            ? 'This gig is complete and no longer shows up in search.'
+            : 'A worker is hired. They can see the exact address.';
+        return;
+    }
+    const note = document.createElement('div');
+    note.className = 'display-hired';
+    note.textContent = post.completed
+        ? 'This gig is complete and no longer shows up in search.'
+        : 'A worker is hired. They can see the exact address.';
+    box.querySelector('.display-info').after(note);
+}
+
+function syncPostActions(box, post, prompt) {
+    const actions = box.querySelector('.myposts-actions');
+    const viewBids = actions.querySelector('.view-bids-button');
+    actions.replaceChildren(viewBids);
+
+    if (post.accepted_user_id && !post.completed) {
+        const complete = document.createElement('button');
+        complete.type = 'button';
+        complete.className = 'display-input-button bid-action';
+        complete.textContent = 'Complete job';
+        complete.addEventListener('click', function() {
+            completeGig(post, box, complete);
+        });
+        actions.append(complete);
+        return;
+    }
+
+    if (prompt) {
+        const review = document.createElement('button');
+        review.type = 'button';
+        review.className = 'display-input-button bid-action';
+        review.textContent = 'Leave a review';
+        review.addEventListener('click', function() {
+            askForReview(prompt, review);
+        });
+        actions.append(review);
+    }
+
+    const form = document.createElement('form');
+    form.className = 'bid-form';
+    const remove = document.createElement('button');
+    remove.type = 'submit';
+    remove.className = 'display-input-button';
+    remove.textContent = 'Delete';
+    form.append(remove);
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        deletePost(post.id, box);
+    });
+    actions.append(form);
+}
+
+async function askForReview(prompt, button) {
+    if (button) {
+        button.disabled = true;
+    }
+    const result = await openReviewDialog(prompt);
+    if (result.submitted) {
+        if (button) {
+            button.remove();
+        }
+        refreshOwnRating();
+        if (typeof refreshUnreadCount === 'function') {
+            refreshUnreadCount();
+        }
+        return;
+    }
+    if (button) {
+        button.disabled = false;
+    }
+}
+
+async function completeGig(post, box, button) {
+    button.disabled = true;
+    try {
+        const response = await fetch(`/api/posts/${post.id}/complete`, { method: 'POST' });
+        const body = await response.json().catch(function() {
+            return {};
+        });
+        if (response.status === 401) {
+            window.location.href = 'signin.html';
+            return;
+        }
+        if (!response.ok) {
+            alert(body.error || 'Could not complete this gig.');
+            button.disabled = false;
+            return;
+        }
+
+        post.completed = true;
+        syncHiredNote(box, post);
+        const prompt = body.alreadyReviewed ? null : {
+            postId: body.postId,
+            postTitle: body.postTitle,
+            revieweeName: body.worker.name,
+            role: 'poster',
+            conversationId: body.conversationId,
+        };
+        syncPostActions(box, post, prompt);
+        if (prompt) {
+            const result = await openReviewDialog(prompt);
+            if (result.submitted) {
+                syncPostActions(box, post, null);
+                refreshOwnRating();
+                if (typeof refreshUnreadCount === 'function') {
+                    refreshUnreadCount();
+                }
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        button.disabled = false;
+        alert('Could not complete this gig.');
+    }
+}
+
+function displayPosts(posts, pending) {
+    if (Array.isArray(posts) && posts.length !== 0) {
         const postsbox = document.getElementById('myposts');
         posts.forEach(function(post) {
             const box = document.createElement('div');
@@ -241,9 +425,6 @@ function displayPosts(posts) {
             box.classList.add('display');
             box.classList.add('myposts');
             const bidCount = Number(post.bid_count) || 0;
-            const hiredNote = post.accepted_user_id
-                ? '<div class="display-hired">A worker is hired. They can see the exact address.</div>'
-                : '';
 
             box.innerHTML = `<div class="display-title">${escapeGigText(post.title)}</div>
                             <label><strong>Description</strong></label>
@@ -254,25 +435,17 @@ function displayPosts(posts) {
                                 <div class="display-type">Type of Pay: ${escapeGigText(post.type_of_pay)}</div>
                                 <div class="display-pay">Pay: $${escapeGigText(post.max_pay)}</div>
                             </div>
-                            ${hiredNote}
+                            ${hiredNoteHtml(post)}
                             <div class="display-bid">
                                 <div>Current Bid: $${escapeGigText(formatGigMoney(post.current_bid))}</div>
                                 <div class="myposts-actions">
                                     <button class="display-input-button bid-action view-bids-button" type="button">View bids (${bidCount})</button>
-                                    <form class="bid-form">
-                                        <button class="display-input-button" type="submit">Delete</button>
-                                    </form>
                                 </div>
                             </div>
                             <div class="bid-list" hidden></div>`;
 
             postsbox.append(box);
-
-            const delete_form = box.querySelector('form');
-            delete_form.addEventListener('submit', function(event) {
-                event.preventDefault();
-                deletePost(post.id, box);
-            });
+            syncPostActions(box, post, pendingForPost(pending, post.id, 'poster'));
 
             const viewBids = box.querySelector('.view-bids-button');
             viewBids.addEventListener('click', function() {
@@ -465,6 +638,7 @@ if (hiredForm && hiredBox) {
                 alert(gigs.error || 'Could not load gigs you were hired for.');
                 return;
             }
+            const pending = await loadPendingReviews();
             hiredBox.innerHTML = '';
             if (!Array.isArray(gigs) || gigs.length === 0) {
                 const empty = document.createElement('p');
@@ -476,6 +650,17 @@ if (hiredForm && hiredBox) {
                     const card = document.createElement('div');
                     card.className = 'display';
                     card.innerHTML = gigHistoryHtml(gig);
+                    const prompt = pendingForPost(pending, gig.id, 'worker');
+                    if (prompt) {
+                        const review = document.createElement('button');
+                        review.type = 'button';
+                        review.className = 'display-input-button bid-action';
+                        review.textContent = 'Leave a review';
+                        review.addEventListener('click', function() {
+                            askForReview(prompt, review);
+                        });
+                        card.append(review);
+                    }
                     hiredBox.append(card);
                 });
             }

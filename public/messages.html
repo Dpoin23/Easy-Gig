@@ -25,11 +25,13 @@
         <div class="messages-layout">
             <section class="messages-inbox" aria-label="Conversations">
                 <h1>Messages</h1>
+                <div id="review-prompts"></div>
                 <div id="inbox-list"></div>
             </section>
             <section class="messages-thread" aria-label="Conversation">
                 <h2 id="thread-title">Select a conversation</h2>
                 <p id="thread-with"></p>
+                <div id="thread-review" hidden></div>
                 <div id="thread-messages"></div>
                 <p id="thread-status" class="thread-status" hidden></p>
                 <form id="thread-form" hidden>
@@ -42,6 +44,7 @@
     </main>
 
     <script src="javascript/updateHeaderScript.js"></script>
+    <script src="javascript/reviews.js"></script>
     <script src="javascript/messages.js"></script>
 </body>
 </html>

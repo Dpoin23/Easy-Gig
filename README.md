@@ -25,6 +25,8 @@ Sign-in sets an httpOnly `eg_session` cookie. Posting, bidding, profile edits, p
 
 A signed-in worker can message the poster of a gig from search. The thread stays on Easy Gig. The messages page polls for new messages; the account menu shows an unread count. Deleting an account keeps threads where that person was the worker and shows them as "Deleted user". Deleting a gig removes its threads.
 
+After a worker is hired, the poster closes the gig with Complete job. That takes the gig off search and asks the poster to leave a 1–5 star review with a description. The hired worker gets the same prompt in Messages. Each side can review the other once for that gig. Profiles show the average of those stars, or "No reviews" when there are none.
+
 Posting a gig requires a real city, neighborhood, or ZIP from Google Places, not typed-in free text. A street address is optional and hidden until the poster hires a bidder unless they choose to show it on the listing. Location search can use a city name, a selected place, or (if the user opts in) the current device location, plus a 5 / 10 / 25 / 50 mile filter. Precise addresses are stripped from public API responses. Google setup is in [docs/GOOGLE_PLACES.md](docs/GOOGLE_PLACES.md).
 
 Search matches part of a title, location, pay type, or pay amount. Closer matches are listed first. Posts that only overlap in another field, or pay amounts nearby, appear below a Related searches line.

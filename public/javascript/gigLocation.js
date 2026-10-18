@@ -65,9 +65,12 @@ function formatGigMoney(value) {
 }
 
 function gigHistoryHtml(point) {
-    const filled = point.was_filled
-        ? '<div class="display-hired">This gig was filled.</div>'
-        : '';
+    let filled = '';
+    if (point.completed) {
+        filled = '<div class="display-hired">This gig is complete.</div>';
+    } else if (point.was_filled) {
+        filled = '<div class="display-hired">This gig was filled.</div>';
+    }
     return `<div class="display-title">${escapeGigText(point.title)}</div>
             <label><strong>Description</strong></label>
             <p class="display-description">${escapeGigText(point.description)}</p>

@@ -55,7 +55,11 @@ function renderBidder(profile) {
 
     const status = document.createElement('p');
     status.className = 'display-hired';
-    if (profile.hired) {
+    if (profile.completed && profile.hired) {
+        status.textContent = 'This gig is complete. You hired this person.';
+    } else if (profile.completed) {
+        status.textContent = 'This gig is complete.';
+    } else if (profile.hired) {
         status.textContent = 'You hired this person for this gig.';
     } else if (!profile.can_hire) {
         status.textContent = 'Someone else is already hired for this gig.';
@@ -63,7 +67,10 @@ function renderBidder(profile) {
         status.textContent = 'You can hire this person for this gig.';
     }
 
-    profileBox.append(heading, gig, amount, status);
+    const rating = renderRatingSummary(profile.rating);
+    rating.classList.add('bidder-rating');
+
+    profileBox.append(heading, rating, gig, amount, status);
 
     if (profile.can_hire) {
         const hire = document.createElement('button');
@@ -77,6 +84,17 @@ function renderBidder(profile) {
     }
 
     gigsBox.replaceChildren();
+    if (profile.reviews && profile.reviews.length > 0) {
+        const reviews = document.createElement('section');
+        reviews.className = 'bidder-section';
+        const reviewHeading = document.createElement('h2');
+        reviewHeading.className = 'bidder-section-title';
+        reviewHeading.textContent = 'Reviews';
+        const list = document.createElement('div');
+        renderReviewList(profile.reviews, list);
+        reviews.append(reviewHeading, list);
+        gigsBox.append(reviews);
+    }
     gigsBox.append(
         gigSection('Gigs they posted', profile.posted_gigs, 'They have not posted a gig.'),
         gigSection('Gigs they were selected for', profile.selected_gigs, 'They have not been hired for a gig yet.')
