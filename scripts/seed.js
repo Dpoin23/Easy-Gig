@@ -23,6 +23,7 @@ const { placesConfigured, autocomplete } = require('../lib/places');
 const { POST_LOCATION_COLUMNS } = require('../lib/postLocation');
 const { resolveGigLocation, INSERT_POST_SQL, insertPostParams } = require('../lib/resolveLocation');
 const { CREATE_CONVERSATIONS_SQL, CREATE_MESSAGES_SQL } = require('../lib/messages');
+const { CREATE_REVIEW_PROMPTS_SQL, CREATE_REVIEWS_SQL } = require('../lib/reviews');
 
 const DEMO_PASSWORD = 'password123';
 
@@ -121,6 +122,8 @@ async function ensureSchema(conn) {
     )`);
     await conn.query(CREATE_CONVERSATIONS_SQL);
     await conn.query(CREATE_MESSAGES_SQL);
+    await conn.query(CREATE_REVIEW_PROMPTS_SQL);
+    await conn.query(CREATE_REVIEWS_SQL);
 
     await ensureColumn(conn, 'users', 'salt', 'VARCHAR(255)');
     await ensureColumn(conn, 'posts', 'user_id', 'INT');
@@ -128,6 +131,7 @@ async function ensureSchema(conn) {
     for (const [column, definition] of POST_LOCATION_COLUMNS) {
         await ensureColumn(conn, 'posts', column, definition);
     }
+    await ensureColumn(conn, 'posts', 'completed_at', 'DATETIME NULL');
 }
 
 async function ensureUsers(conn) {

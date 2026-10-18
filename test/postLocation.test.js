@@ -83,6 +83,8 @@ describe('postLocation', () => {
         assert.equal(publicView.has_precise_address, true);
         assert.equal(publicView.address_shared_when, 'after_hire');
         assert.equal(publicView.location, 'Capitol Hill, Seattle, WA');
+        assert.equal(publicView.completed, false);
+        assert.equal(publicPostView({ ...seattle, completed_at: '2026-10-18' }, null).completed, true);
         assert.deepEqual(publicView.images, []);
         assert.ok(!('address_formatted' in publicView));
         assert.ok(!('address_lat' in publicView));

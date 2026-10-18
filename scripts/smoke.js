@@ -134,7 +134,11 @@ async function main() {
       ['POST', '/api/addpost'],
       ['PUT', '/api/updatecurrentbid/1'],
       ['PUT', '/api/acceptbid/1'],
+      ['POST', '/api/posts/1/complete'],
       ['GET', '/api/posts/1/bids'],
+      ['GET', '/api/reviews/pending'],
+      ['POST', '/api/reviews'],
+      ['GET', '/api/users/1/reviews'],
       ['GET', '/api/bidders/1?post_id=1'],
       ['GET', '/api/me/selected'],
       ['GET', '/api/posts/1/address'],
@@ -149,6 +153,10 @@ async function main() {
       ['POST', '/api/conversations/1/messages'],
       ['PUT', '/api/conversations/1/read'],
       ['GET', '/api/messages/unread-count'],
+      ['POST', '/api/posts/1/complete'],
+      ['GET', '/api/reviews/pending'],
+      ['POST', '/api/reviews'],
+      ['GET', '/api/users/1/reviews'],
     ];
     for (const [method, pathname] of noSession) {
       const anon = await request(pathname, { method });

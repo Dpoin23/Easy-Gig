@@ -150,6 +150,28 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
             imageNames = images.map((row) => row.stored_name);
             await conn.query('DELETE FROM post_images WHERE post_id IN (?)', [postIds]);
         }
+        if (tables.has('reviews') && (postIds.length > 0 || userIds.length > 0)) {
+            if (postIds.length > 0) {
+                await conn.query('DELETE FROM reviews WHERE post_id IN (?)', [postIds]);
+            }
+            if (userIds.length > 0) {
+                await conn.query(
+                    'DELETE FROM reviews WHERE reviewer_id IN (?) OR reviewee_id IN (?)',
+                    [userIds, userIds]
+                );
+            }
+        }
+        if (tables.has('review_prompts') && (postIds.length > 0 || userIds.length > 0)) {
+            if (postIds.length > 0) {
+                await conn.query('DELETE FROM review_prompts WHERE post_id IN (?)', [postIds]);
+            }
+            if (userIds.length > 0) {
+                await conn.query(
+                    'DELETE FROM review_prompts WHERE poster_id IN (?) OR worker_id IN (?)',
+                    [userIds, userIds]
+                );
+            }
+        }
         if (tables.has('conversations') && (postIds.length > 0 || userIds.length > 0)) {
             const conversationIds = new Set();
             if (postIds.length > 0) {
@@ -172,6 +194,28 @@ async function deleteAll(conn, { tables, postColumns }, users, posts) {
                     await conn.query('DELETE FROM messages WHERE conversation_id IN (?)', [ids]);
                 }
                 await conn.query('DELETE FROM conversations WHERE id IN (?)', [ids]);
+            }
+        }
+        if (tables.has('reviews') && (postIds.length > 0 || userIds.length > 0)) {
+            if (postIds.length > 0) {
+                await conn.query('DELETE FROM reviews WHERE post_id IN (?)', [postIds]);
+            }
+            if (userIds.length > 0) {
+                await conn.query(
+                    'DELETE FROM reviews WHERE reviewer_id IN (?) OR reviewee_id IN (?)',
+                    [userIds, userIds]
+                );
+            }
+        }
+        if (tables.has('review_prompts') && (postIds.length > 0 || userIds.length > 0)) {
+            if (postIds.length > 0) {
+                await conn.query('DELETE FROM review_prompts WHERE post_id IN (?)', [postIds]);
+            }
+            if (userIds.length > 0) {
+                await conn.query(
+                    'DELETE FROM review_prompts WHERE poster_id IN (?) OR worker_id IN (?)',
+                    [userIds, userIds]
+                );
             }
         }
         if (tables.has('bids') && (postIds.length > 0 || userIds.length > 0)) {

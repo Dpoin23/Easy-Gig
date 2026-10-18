@@ -41,6 +41,21 @@ const {
     deleteThreadsForPosts,
     ensureMessageTables,
 } = require('./lib/messages');
+const {
+    RATING_SQL,
+    REVIEWS_ABOUT_SQL,
+    REVIEW_BY_ID_SQL,
+    PENDING_SQL,
+    PENDING_COUNT_SQL,
+    reviewStars,
+    reviewDescription,
+    reviewDecision,
+    ratingFromAggregate,
+    publicReview,
+    publicPendingReview,
+    isOpenGig,
+    ensureReviews,
+} = require('./lib/reviews');
 const { dbConfig } = require('./lib/dbConfig');
 const {
     SESSION_TTL_SECONDS,
@@ -149,8 +164,14 @@ db.connect((err) => {
                                 console.error('Could not create message tables:', messagesErr.message);
                                 return;
                             }
-                            dbReady = true;
-                            console.log('mysql connected to easy_gig');
+                            ensureReviews(db, (reviewsErr) => {
+                                if (reviewsErr) {
+                                    console.error('Could not create review tables:', reviewsErr.message);
+                                    return;
+                                }
+                                dbReady = true;
+                                console.log('mysql connected to easy_gig');
+                            });
                         });
                     });
                 });
@@ -211,6 +232,7 @@ for (const path of [
     '/api/updatecurrentbid',
     '/api/acceptbid',
     '/api/bidders',
+    '/api/reviews',
     '/api/updateuser',
     '/api/deletepostbyid',
     '/api/deleteaccountbyid',
@@ -229,6 +251,8 @@ for (const path of [
     '/api/getpostsbyuserid',
     '/api/posts',
     '/api/bidders',
+    '/api/reviews',
+    '/api/users',
 ]) {
     app.use(path, readLimiter);
 }
@@ -314,6 +338,8 @@ for (const path of [
     '/api/posts',
     '/api/conversations',
     '/api/messages/unread-count',
+    '/api/reviews',
+    '/api/users',
 ]) {
     app.use(path, requireUser);
 }
@@ -548,6 +574,7 @@ app.get('/createpoststable', (req, res) => {
         address_visibility VARCHAR(32) NOT NULL DEFAULT 'after_hire',
         current_bidder_id INT,
         accepted_user_id INT,
+        completed_at DATETIME NULL,
         PRIMARY KEY(id)
         )`;
 
@@ -832,6 +859,18 @@ app.post('/api/signout', (req, res) => {
     });
 });
 
+function sendWithRating(res, userId, payload) {
+    runQuery(res, RATING_SQL, [userId], (summary) => {
+        runQuery(res, REVIEWS_ABOUT_SQL, [userId], (rows) => {
+            res.json({
+                ...payload,
+                rating: ratingFromAggregate(summary[0]),
+                reviews: rows.map(publicReview),
+            });
+        });
+    });
+}
+
 app.get('/api/me', (req, res) => {
     runQuery(
         res,
@@ -843,7 +882,7 @@ app.get('/api/me', (req, res) => {
                 sendError(res, 401, 'Sign in required');
                 return;
             }
-            res.json(result[0]);
+            sendWithRating(res, req.userId, result[0]);
         }
     );
 });
@@ -1021,7 +1060,12 @@ app.put('/api/conversations/:id/read', (req, res) => {
 
 app.get('/api/messages/unread-count', (req, res) => {
     runQuery(res, UNREAD_COUNT_SQL, [req.userId, req.userId, req.userId], (rows) => {
-        res.json({ unread: Number(rows[0] && rows[0].unread) || 0 });
+        runQuery(res, PENDING_COUNT_SQL, [req.userId, req.userId, req.userId], (pending) => {
+            res.json({
+                unread: Number(rows[0] && rows[0].unread) || 0,
+                reviewPrompts: Number(pending[0] && pending[0].pending) || 0,
+            });
+        });
     });
 });
 
@@ -1058,7 +1102,7 @@ function sendRankedPosts(res, posts, search, mode, viewerId, origin) {
 
 function searchPosts(mode, search, res, req) {
     runQuery(res, 'SELECT * FROM posts', [], (result) => {
-        sendRankedPosts(res, result, search, mode, req.userId);
+        sendRankedPosts(res, result.filter(isOpenGig), search, mode, req.userId);
     });
 }
 
@@ -1103,8 +1147,9 @@ async function searchByLocation(req, res) {
     }
 
     runQuery(res, 'SELECT * FROM posts', [], (result) => {
+        const open = result.filter(isOpenGig);
         if (origin) {
-            const nearby = filterByRadius(result, origin, radius);
+            const nearby = filterByRadius(open, origin, radius);
             withPostImages(nearby, (err, ready) => {
                 if (err) {
                     console.error(err.code || 'query', err.message);
@@ -1118,7 +1163,7 @@ async function searchByLocation(req, res) {
             });
             return;
         }
-        sendRankedPosts(res, result, search, 'location', req.userId);
+        sendRankedPosts(res, open, search, 'location', req.userId);
     });
 }
 
@@ -1261,6 +1306,10 @@ app.put('/api/updatecurrentbid/:id', (req, res) => {
             sendError(res, 400, 'You cannot bid on your own gig');
             return;
         }
+        if (post.completed_at) {
+            sendError(res, 409, 'This gig is already complete');
+            return;
+        }
         if (post.accepted_user_id) {
             sendError(res, 409, 'This gig already has a hired worker');
             return;
@@ -1354,7 +1403,7 @@ app.get('/api/bidders/:userId', (req, res) => {
 
     runQuery(
         res,
-        'SELECT id, user_id, title, accepted_user_id FROM posts WHERE id = ? AND user_id = ?',
+        'SELECT id, user_id, title, accepted_user_id, completed_at FROM posts WHERE id = ? AND user_id = ?',
         [postId, req.userId],
         (posts) => {
             if (posts.length === 0) {
@@ -1399,13 +1448,14 @@ app.get('/api/bidders/:userId', (req, res) => {
                                                 sendError(res, 500, 'Database error');
                                                 return;
                                             }
-                                            res.json({
+                                            sendWithRating(res, bidderId, {
                                                 id: bidderId,
                                                 name: bid.name,
                                                 post_id: postId,
                                                 post_title: post.title,
-                                                can_hire: !post.accepted_user_id,
+                                                can_hire: !post.accepted_user_id && !post.completed_at,
                                                 hired: Number(post.accepted_user_id) === Number(bidderId),
+                                                completed: Boolean(post.completed_at),
                                                 bid: {
                                                     id: bid.id,
                                                     amount: Number(bid.amount),
@@ -1470,6 +1520,10 @@ app.put('/api/acceptbid/:id', (req, res) => {
             }
 
             const post = rows[0];
+            if (post.completed_at) {
+                sendError(res, 409, 'This gig is already complete');
+                return;
+            }
             if (post.accepted_user_id) {
                 sendError(res, 409, 'This gig already has a hired worker');
                 return;
@@ -1507,6 +1561,223 @@ app.put('/api/acceptbid/:id', (req, res) => {
                                 ok: true,
                                 accepted_user_id: bid.user_id,
                                 amount: Number(bid.amount),
+                            });
+                        }
+                    );
+                }
+            );
+        }
+    );
+});
+
+function ensureHireConversation(posterId, workerId, postId, done) {
+    const existingSql = 'SELECT id FROM conversations WHERE post_id = ? AND worker_id = ?';
+    db.query(existingSql, [postId, workerId], (err, rows) => {
+        if (err) {
+            done(err);
+            return;
+        }
+        if (rows.length > 0) {
+            done(null, rows[0].id);
+            return;
+        }
+        db.query(
+            'INSERT INTO conversations (post_id, poster_id, worker_id) VALUES (?, ?, ?)',
+            [postId, posterId, workerId],
+            (insertErr, result) => {
+                if (insertErr && insertErr.code === 'ER_DUP_ENTRY') {
+                    db.query(existingSql, [postId, workerId], (againErr, again) => {
+                        if (againErr) {
+                            done(againErr);
+                            return;
+                        }
+                        done(null, again[0] ? again[0].id : null);
+                    });
+                    return;
+                }
+                if (insertErr) {
+                    done(insertErr);
+                    return;
+                }
+                done(null, result.insertId);
+            }
+        );
+    });
+}
+
+app.post('/api/posts/:id/complete', (req, res) => {
+    const postId = readField(res, idField(req.params.id, 'Post'));
+    if (postId == null) {
+        return;
+    }
+
+    runQuery(
+        res,
+        'SELECT id, user_id, title, accepted_user_id, completed_at FROM posts WHERE id = ? AND user_id = ?',
+        [postId, req.userId],
+        (posts) => {
+            if (posts.length === 0) {
+                sendError(res, 404, 'Post not found');
+                return;
+            }
+
+            const post = posts[0];
+            const workerId = post.accepted_user_id;
+            if (!workerId) {
+                sendError(res, 400, 'Hire someone before completing this gig');
+                return;
+            }
+
+            const postTitle = post.title || 'Gig';
+            db.query(
+                `INSERT INTO review_prompts (post_id, post_title, poster_id, worker_id)
+                 VALUES (?, ?, ?, ?)`,
+                [postId, postTitle, req.userId, workerId],
+                (promptErr) => {
+                    if (promptErr && promptErr.code !== 'ER_DUP_ENTRY') {
+                        console.error(promptErr.code || 'query', promptErr.message);
+                        sendError(res, 500, 'Database error');
+                        return;
+                    }
+
+                    runQuery(
+                        res,
+                        'UPDATE posts SET completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) WHERE id = ? AND user_id = ?',
+                        [postId, req.userId],
+                        () => {
+                            ensureHireConversation(req.userId, workerId, postId, (conversationErr, conversationId) => {
+                                if (conversationErr) {
+                                    console.error(conversationErr.code || 'query', conversationErr.message);
+                                    sendError(res, 500, 'Database error');
+                                    return;
+                                }
+                                runQuery(
+                                    res,
+                                    'SELECT id, name FROM users WHERE id = ?',
+                                    [workerId],
+                                    (workers) => {
+                                        runQuery(
+                                            res,
+                                            'SELECT id FROM reviews WHERE post_id = ? AND reviewer_id = ? LIMIT 1',
+                                            [postId, req.userId],
+                                            (existing) => {
+                                                const worker = workers[0];
+                                                res.json({
+                                                    ok: true,
+                                                    postId,
+                                                    postTitle,
+                                                    conversationId: conversationId || null,
+                                                    alreadyReviewed: existing.length > 0,
+                                                    worker: {
+                                                        id: Number(workerId),
+                                                        name: worker && worker.name ? worker.name : 'Deleted user',
+                                                    },
+                                                });
+                                            }
+                                        );
+                                    }
+                                );
+                            });
+                        }
+                    );
+                }
+            );
+        }
+    );
+});
+
+app.get('/api/reviews/pending', (req, res) => {
+    runQuery(
+        res,
+        PENDING_SQL,
+        [req.userId, req.userId, req.userId, req.userId],
+        (rows) => {
+            res.json({
+                prompts: rows
+                    .map((row) => publicPendingReview(row, req.userId))
+                    .filter(Boolean),
+            });
+        }
+    );
+});
+
+app.get('/api/users/:id/reviews', (req, res) => {
+    const userId = readField(res, idField(req.params.id, 'User'));
+    if (userId == null) {
+        return;
+    }
+
+    runQuery(res, 'SELECT id, name FROM users WHERE id = ?', [userId], (users) => {
+        if (users.length === 0) {
+            sendError(res, 404, 'User not found');
+            return;
+        }
+        sendWithRating(res, userId, {
+            id: userId,
+            name: users[0].name,
+        });
+    });
+});
+
+app.post('/api/reviews', (req, res) => {
+    const body = req.body || {};
+    const postId = readField(res, idField(body.postId, 'Post'));
+    if (postId == null) {
+        return;
+    }
+    const stars = reviewStars(body.stars);
+    if (stars.error) {
+        sendError(res, stars.status, stars.error);
+        return;
+    }
+    const description = reviewDescription(body.description);
+    if (description.error) {
+        sendError(res, description.status, description.error);
+        return;
+    }
+
+    runQuery(
+        res,
+        'SELECT post_id, post_title, poster_id, worker_id FROM review_prompts WHERE post_id = ?',
+        [postId],
+        (prompts) => {
+            if (prompts.length === 0) {
+                sendError(res, 404, 'This gig is not ready for a review');
+                return;
+            }
+            runQuery(
+                res,
+                'SELECT id FROM reviews WHERE post_id = ? AND reviewer_id = ? LIMIT 1',
+                [postId, req.userId],
+                (existing) => {
+                    const decision = reviewDecision(prompts[0], req.userId, existing.length > 0);
+                    if (decision.error) {
+                        sendError(res, decision.status, decision.error);
+                        return;
+                    }
+                    db.query(
+                        `INSERT INTO reviews (post_id, post_title, reviewer_id, reviewee_id, stars, description)
+                         VALUES (?, ?, ?, ?, ?, ?)`,
+                        [
+                            postId,
+                            prompts[0].post_title || 'Gig',
+                            decision.reviewerId,
+                            decision.revieweeId,
+                            stars.value,
+                            description.value,
+                        ],
+                        (err, result) => {
+                            if (err && err.code === 'ER_DUP_ENTRY') {
+                                sendError(res, 409, 'You already reviewed this gig');
+                                return;
+                            }
+                            if (err) {
+                                console.error(err.code || 'query', err.message);
+                                sendError(res, 500, 'Database error');
+                                return;
+                            }
+                            runQuery(res, REVIEW_BY_ID_SQL, [result.insertId], (rows) => {
+                                res.status(201).json({ ok: true, review: publicReview(rows[0]) });
                             });
                         }
                     );
